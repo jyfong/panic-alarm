@@ -49,6 +49,7 @@ class GuiPart:
         b5 = Button(topFrame,text="MCU ID Checking", command=lambda: send("ARI\r"))
         b5.grid(row=0,column=5)
 
+
         # Bottom Frame
         # Receive
         lbl1 = Label(middleFrame, text="Receive")
