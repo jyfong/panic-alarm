@@ -7,6 +7,7 @@ import re
 import sys
 import d2xx
 import tkMessageBox
+import os
 
 class GuiPart:
     def __init__(self, master, queue, endCommand, send):
@@ -34,8 +35,12 @@ class GuiPart:
         # Top Frame Buttons
         b1 = Button(topFrame,text="Configure Central ID" ,command=self.printMsg)
         b1.grid(row=0,column=0)
-        b2 = Button(topFrame,text="Button2", command=self.send)
+        b2 = Button(topFrame,text="Ask Respond")
         b2.grid(row=0,column=1)
+        b3 = Button(topFrame,text="Repeater Search Path")
+        b3.grid(row=0,column=3)
+        b4 = Button(topFrame,text="All Repeater Search Path")
+        b4.grid(row=0,column=4)
 
         # Bottom Frame
         # Receive
@@ -159,8 +164,16 @@ class ThreadedClient:
     def send(self):
         print self.d.write("ART00000005G\r")
 
-rand = random.Random()
-root = Tk()
+if __name__ == '__main__':
+    try:
+        rand = random.Random()
+        root = Tk()
 
-client = ThreadedClient(root)
-root.mainloop()
+        client = ThreadedClient(root)
+        root.mainloop()
+    except KeyboardInterrupt:
+        print 'Interrupted'
+        try:
+            sys.exit(1)
+        except SystemExit:
+            os._exit(0)
