@@ -8,6 +8,10 @@ import sys
 import d2xx
 import tkMessageBox
 import os
+import dataset
+
+# connecting to a SQLite database
+db = dataset.connect('sqlite:///mydatabase.db')
 
 class GuiPart:
     def __init__(self, master, queue, endCommand, send):
@@ -145,18 +149,17 @@ class ThreadedClient:
         self.d = d2xx.open(0)
         self.d.setBaudRate(115200)
         self.d.setTimeouts(1, 0)
+        time.sleep(1) # cheat the program to let UI finish loading
         buffer = ''
         try:
             while self.running:
-                # time.sleep(10)
-                # print ('t')
                 b = self.d.read(1)
 
                 if b != '' and b != '\r':
                     buffer += b
 
                 if b == '\r':
-                    print buffer, len(buffer)
+                    # print buffer, len(buffer)
                     # decode(buffer)
                     self.queue.put(buffer)
                     buffer = ''
@@ -181,5 +184,4 @@ if __name__ == '__main__':
         try:
             sys.exit(1)
         except SystemExit:
-            root.destroy()
             os._exit(0)
