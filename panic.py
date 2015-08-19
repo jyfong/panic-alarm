@@ -71,23 +71,6 @@ class GuiPart:
 
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
-        # self.poll()
-
-    def poll(self):
-        now = self.l1.curselection()
-        if now != self.current:
-            self.list_has_changed(now)
-            self.current = now
-        self.master.after(250, self.poll)
-
-    def list_has_changed(self, selection):
-        print "selection is", selection 
-        if len(selection) > 0:
-            self.repeater = self.l1.get(selection[0])
-            print self.repeater
-
-    def printMsg(self):
-        print "test"
 
     def on_exit(self):
         """When you click to exit, this function is called"""
@@ -188,7 +171,6 @@ class ThreadedClient:
 
 if __name__ == '__main__':
     try:
-        rand = random.Random()
         root = Tk()
 
         client = ThreadedClient(root)
