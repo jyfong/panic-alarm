@@ -135,6 +135,24 @@ class ThreadedClient:
             sys.exit(1)
         self.master.after(1000, self.periodicCall)
 
+
+    def decode(b):
+
+        m = re.match('RA(\w)(\d{8})(.{2})?', b)
+        if m:
+            print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
+
+            cmd = m.group(1)
+            repeater = m.group(2)
+            RSSI = m.group(3)
+
+            if cmd == 'I':
+                pass
+                # repeaters.add(repeater)
+
+        else:
+            print 'Something happen', b
+
     def workerThread1(self):
         """
         This is where we handle the asynchronous I/O. For example, it may be
@@ -157,7 +175,7 @@ class ThreadedClient:
 
                 if b == '\r':
                     print buffer, len(buffer)
-                    # decode(buffer)
+                    self.decode(buffer)
                     self.queue.put(buffer)
                     buffer = ''
         except:
