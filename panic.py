@@ -11,9 +11,12 @@ import os
 
 class GuiPart:
     def __init__(self, master, queue, endCommand, send):
+        self.master = master
         self.queue = queue
         self.endCommand = endCommand
         self.send = send
+        self.repeater = None
+        self.current = None
         # Set up the GUI
 
         master.title("DF Panic Alarm")
@@ -33,24 +36,24 @@ class GuiPart:
         bottomFrame.pack()
 
         # Top Frame Buttons
-        b1 = Button(topFrame,text="Configure Central ID" ,command=self.printMsg)
+        b1 = Button(topFrame,text="Configure Central ID" ,command=lambda: send("ART"+self.repeater+"G\r"))
         b1.grid(row=0,column=0)
-        b2 = Button(topFrame,text="Ask Respond")
+        b2 = Button(topFrame,text="Ask Respond", command=lambda: send("ART"+self.repeater+"Z\r"))
         b2.grid(row=0,column=1)
-        b3 = Button(topFrame,text="Repeater Search Path")
+        b3 = Button(topFrame,text="Repeater Search Path", command=lambda: send("ART"+self.repeater+"S000\r"))
         b3.grid(row=0,column=3)
-        b4 = Button(topFrame,text="All Repeater Search Path")
+        b4 = Button(topFrame,text="All Repeater Search Path", command=lambda: send("ART00000000S000\r"))
         b4.grid(row=0,column=4)
+        b5 = Button(topFrame,text="MCU ID Checking", command=lambda: send("ARI\r"))
+        b5.grid(row=0,column=5)
 
         # Bottom Frame
         # Receive
         lbl1 = Label(bottomFrame, text="Receive")
         lbl1.grid(row=0,column=0)
-        l1 = Listbox(bottomFrame)
-        l1.grid(row=1,column=0)
-        l1.insert(END, "00000005")
-        l1.insert(END, "00000001")
-        l1.insert(END, "00000000")
+        self.l1 = Listbox(bottomFrame)
+        self.l1.grid(row=1,column=0)
+        self.l1.insert(END, "00000005")
 
         # Send
         lbl2 = Label(bottomFrame, text="Send")
@@ -62,7 +65,20 @@ class GuiPart:
         console.pack()
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
+        self.poll()
 
+    def poll(self):
+        now = self.l1.curselection()
+        if now != self.current:
+            self.list_has_changed(now)
+            self.current = now
+        self.master.after(250, self.poll)
+
+    def list_has_changed(self, selection):
+        print "selection is", selection 
+        if len(selection) > 0:
+            self.repeater = self.l1.get(selection[0])
+            print self.repeater
 
     def printMsg(self):
         print "test"
@@ -161,8 +177,8 @@ class ThreadedClient:
     def endApplication(self):
         self.running = 0
 
-    def send(self):
-        print self.d.write("ART00000005G\r")
+    def send(self, cmd):
+        print self.d.write(cmd), cmd
 
 if __name__ == '__main__':
     try:
