@@ -33,49 +33,69 @@ class GuiPart:
         # display the menu
         master.config(menu=menubar)
 
-        # create a frame for whole window
+        # Init a frame for whole window
         topFrame = Frame(master)
-        topFrame.pack(side=TOP)
+        topFrame.pack(side=TOP,fill=BOTH, expand=1)
         middleFrame = Frame(master)
-        middleFrame.pack(side=TOP)
+        middleFrame.pack(side=TOP,fill=BOTH, expand=1)
         bottomFrame = Frame(master)
-        bottomFrame.pack(side=BOTTOM)
+        bottomFrame.pack(side=BOTTOM,fill=BOTH, expand=1)
+
 
         # Top Frame Buttons
-        b1 = Button(topFrame,text="Configure Central ID" ,command=lambda: send("ART"+self.l1.get(selection[0])+"G\r"))
+        b1 = Button(topFrame,text="Configure Central ID" ,command=self.configCentralId )
         b1.grid(row=0,column=0)
-        b2 = Button(topFrame,text="Ask Respond", command=lambda: send("ART"+self.l1.get(selection[0])+"Z\r"))
+        b2 = Button(topFrame,text="Ask Respond", command=lambda: send("ART"+self.l1.get(self.l1.curselection())+"Z\r"))
         b2.grid(row=0,column=1)
-        b3 = Button(topFrame,text="Repeater Search Path", command=lambda: send("ART"+self.l1.get(selection[0])+"S000\r"))
+        b3 = Button(topFrame,text="Repeater Search Path", command=lambda: send("ART"+self.l1.get(self.l1.curselection())+"S000\r"))
         b3.grid(row=0,column=3)
         b4 = Button(topFrame,text="All Repeater Search Path", command=lambda: send("ART00000000S000\r"))
         b4.grid(row=0,column=4)
         b5 = Button(topFrame,text="MCU ID Checking", command=lambda: send("ARI\r"))
         b5.grid(row=0,column=5)
 
+        #Initialize variables for UI
+        listbox_width = 51
 
-        # Bottom Frame
+        # Middle Frame
         # Receive
         lbl1 = Label(middleFrame, text="Receive")
         lbl1.grid(row=0,column=0)
-        self.l1 = Listbox(middleFrame)
+        scrollbar = Scrollbar(middleFrame)
+        self.l1 = Listbox(middleFrame, width=listbox_width,yscrollcommand=scrollbar.set)
         self.l1.grid(row=1,column=0)
+        scrollbar.grid(row=1,column=1,sticky=N+S)
+        scrollbar.config( command = self.l1.yview)
         self.l1.insert(END, "00000005")
-
+        self.l1.insert(END, "00000009")
+        
         # Send
         lbl2 = Label(middleFrame, text="Send")
-        lbl2.grid(row=0,column=1)
-        self.l2 = Listbox(middleFrame)
-        self.l2.grid(row=1,column=1)
-
-        # Middle Frame 
+        lbl2.grid(row=0,column=2)
+        scrollbar2 = Scrollbar(middleFrame)
+        self.l2 = Listbox(middleFrame, width=listbox_width,yscrollcommand=scrollbar2.set)
+        self.l2.grid(row=1,column=2)
+        scrollbar2.grid(row=1,column=3,sticky=N+S)
+        scrollbar2.config( command = self.l2.yview)
+        
+        # Bottom Frame 
         # Console logging
-        log = Text(bottomFrame)
-        log.grid(row=0,column=0)
-        log.insert(END, "Test")
-
+        scrollbar3 = Scrollbar(bottomFrame)
+        self.log = Text(bottomFrame,yscrollcommand=scrollbar3.set)
+        self.log.grid(row=0,column=0)
+        scrollbar3.grid(row=0,column=1,sticky=N+S)
+        scrollbar3.config( command = self.log.yview)
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
+
+    def logger(self, msg):
+        self.log.insert(END, msg)
+
+    def configCentralId(self):
+        currentValue = self.l1.get(self.l1.curselection())
+        self.send("ART"+ currentValue +"G\r")
+        msg = "Device ID=" + currentValue + " is set to this central\n" 
+        self.logger(msg)
 
     def on_exit(self):
         """When you click to exit, this function is called"""
@@ -92,8 +112,7 @@ class GuiPart:
                 msg = self.queue.get(0)
                 # Check contents of message and do what it says
                 # As a test, we simply print it
-                self.l2.insert(END, msg)
-                print msg
+                self.logger(msg+"\n")
             except Queue.Empty:
                 pass
 
@@ -171,6 +190,7 @@ class ThreadedClient:
         buffer = ''
         try:
             while self.running:
+                time.sleep(0.1)
                 b = self.d.read(1)
 
                 if b != '' and b != '\r':
@@ -178,11 +198,11 @@ class ThreadedClient:
 
                 if b == '\r':
                     print buffer, len(buffer)
-                    self.decode(buffer)
+                    # self.decode(buffer)
                     self.queue.put(buffer)
                     buffer = ''
         except:
-            print 'close'
+            print 'Closed', sys.exc_info()[0]
             self.d.close()
 
     def endApplication(self):
