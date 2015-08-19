@@ -182,4 +182,5 @@ if __name__ == '__main__':
         try:
             sys.exit(1)
         except SystemExit:
+            root.destroy()
             os._exit(0)
