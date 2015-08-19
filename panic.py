@@ -38,11 +38,11 @@ class GuiPart:
         bottomFrame.pack(side=BOTTOM)
 
         # Top Frame Buttons
-        b1 = Button(topFrame,text="Configure Central ID" ,command=lambda: send("ART"+self.repeater+"G\r"))
+        b1 = Button(topFrame,text="Configure Central ID" ,command=lambda: send("ART"+self.l1.get(selection[0])+"G\r"))
         b1.grid(row=0,column=0)
-        b2 = Button(topFrame,text="Ask Respond", command=lambda: send("ART"+self.repeater+"Z\r"))
+        b2 = Button(topFrame,text="Ask Respond", command=lambda: send("ART"+self.l1.get(selection[0])+"Z\r"))
         b2.grid(row=0,column=1)
-        b3 = Button(topFrame,text="Repeater Search Path", command=lambda: send("ART"+self.repeater+"S000\r"))
+        b3 = Button(topFrame,text="Repeater Search Path", command=lambda: send("ART"+self.l1.get(selection[0])+"S000\r"))
         b3.grid(row=0,column=3)
         b4 = Button(topFrame,text="All Repeater Search Path", command=lambda: send("ART00000000S000\r"))
         b4.grid(row=0,column=4)
@@ -71,10 +71,9 @@ class GuiPart:
 
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
-        self.poll()
+        # self.poll()
 
     def poll(self):
-        print self.l1.curselection, self.current
         now = self.l1.curselection()
         if now != self.current:
             self.list_has_changed(now)
