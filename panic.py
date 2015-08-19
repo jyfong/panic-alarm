@@ -17,7 +17,7 @@ class GuiPart:
         # Set up the GUI
 
         master.title("DF Panic Alarm")
-        master.geometry("800x600+300+30")
+        master.geometry("+300+30")
 
         # create a toplevel menu
         menubar = Menu(master)
@@ -28,9 +28,11 @@ class GuiPart:
 
         # create a frame for whole window
         topFrame = Frame(master)
-        topFrame.pack()
+        topFrame.pack(side=TOP)
+        middleFrame = Frame(master)
+        middleFrame.pack(side=TOP)
         bottomFrame = Frame(master)
-        bottomFrame.pack()
+        bottomFrame.pack(side=BOTTOM)
 
         # Top Frame Buttons
         b1 = Button(topFrame,text="Configure Central ID" ,command=self.printMsg)
@@ -44,22 +46,26 @@ class GuiPart:
 
         # Bottom Frame
         # Receive
-        lbl1 = Label(bottomFrame, text="Receive")
+        lbl1 = Label(middleFrame, text="Receive")
         lbl1.grid(row=0,column=0)
-        l1 = Listbox(bottomFrame)
+        l1 = Listbox(middleFrame)
         l1.grid(row=1,column=0)
         l1.insert(END, "00000005")
         l1.insert(END, "00000001")
         l1.insert(END, "00000000")
 
         # Send
-        lbl2 = Label(bottomFrame, text="Send")
+        lbl2 = Label(middleFrame, text="Send")
         lbl2.grid(row=0,column=1)
-        self.l2 = Listbox(bottomFrame)
+        self.l2 = Listbox(middleFrame)
         self.l2.grid(row=1,column=1)
 
-        console = Button(master, text='Done', command=self.endCommand)
-        console.pack()
+        # Middle Frame 
+        # Console logging
+        log = Text(bottomFrame)
+        log.grid(row=0,column=0)
+        log.insert(END, "Test")
+
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
 
