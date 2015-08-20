@@ -21,6 +21,10 @@ class GuiPart:
         self.send = send
         self.repeater = None
         self.current = None
+        self.table = db['repeater']
+
+
+
         # Set up the GUI
 
         master.title("DF Panic Alarm")
@@ -66,8 +70,6 @@ class GuiPart:
         self.l1.grid(row=1,column=0)
         scrollbar.grid(row=1,column=1,sticky=N+S)
         scrollbar.config( command = self.l1.yview)
-        self.l1.insert(END, "00000005")
-        self.l1.insert(END, "00000009")
         
         # Send
         lbl2 = Label(middleFrame, text="Send")
@@ -87,6 +89,10 @@ class GuiPart:
         scrollbar3.config( command = self.log.yview)
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
+
+        
+        for repeater in self.table:
+            self.l1.insert(END, repeater['n'])
 
     def logger(self, msg):
         self.log.insert(END, msg)
@@ -131,10 +137,12 @@ class GuiPart:
             if cmd == 'A':
                 msg = "Repeater with ID="+ repeater + " has acknowledged..\n"
                 self.logger(msg)
-                # repeaters.add(repeater)
             elif cmd == "I":
                 msg = "Central ID=" + repeater + "\n"
                 self.logger(msg)
+                if not self.table.find_one(n=repeater):
+                    self.l1.insert(END, repeater)
+                    self.table.insert(dict(n=repeater))
             elif cmd == "C":
                 msg = "Repeater with ID=" + repeater + " has responded or finished searching..\n"
                 self.logger(msg)
@@ -227,7 +235,6 @@ class ThreadedClient:
 
                 if b == '\r':
                     print "Receive:", buffer, len(buffer)
-                    # self.decode(buffer)
                     self.queue.put(buffer)
                     buffer = ''
                     
