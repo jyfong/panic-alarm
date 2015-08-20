@@ -45,13 +45,13 @@ class GuiPart:
         # Top Frame Buttons
         b1 = Button(topFrame,text="Configure Central ID" ,command=self.configCentralId )
         b1.grid(row=0,column=0)
-        b2 = Button(topFrame,text="Ask Respond", command=lambda: send("ART"+self.l1.get(self.l1.curselection())+"Z\r"))
+        b2 = Button(topFrame,text="Ask Respond", command=self.askRespond )
         b2.grid(row=0,column=1)
-        b3 = Button(topFrame,text="Repeater Search Path", command=lambda: send("ART"+self.l1.get(self.l1.curselection())+"S000\r"))
+        b3 = Button(topFrame,text="Repeater Search Path", command=self.repeaterSearchPath )
         b3.grid(row=0,column=3)
-        b4 = Button(topFrame,text="All Repeater Search Path", command=lambda: send("ART00000000S000\r"))
+        b4 = Button(topFrame,text="All Repeater Search Path", command=self.allRepeaterSearchPath )
         b4.grid(row=0,column=4)
-        b5 = Button(topFrame,text="MCU ID Checking", command=lambda: send("ARI\r"))
+        b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking )
         b5.grid(row=0,column=5)
 
         #Initialize variables for UI
@@ -93,9 +93,54 @@ class GuiPart:
 
     def configCentralId(self):
         currentValue = self.l1.get(self.l1.curselection())
-        self.send("ART"+ currentValue +"G\r")
-        msg = "Device ID=" + currentValue + " is set to this central\n" 
+        self.send(b"ART"+ currentValue +"G\r")
+        msg = "Setting Device ID=" + currentValue + " to this central\n" 
         self.logger(msg)
+
+    def askRespond(self):
+        currentValue = self.l1.get(self.l1.curselection())
+        self.send(b"ART"+ currentValue +"Z\r")
+        msg = "Asking Device ID=" + currentValue + " to respond...\n" 
+        self.logger(msg)
+
+    def repeaterSearchPath(self):
+        currentValue = self.l1.get(self.l1.curselection())
+        self.send(b"ART"+ currentValue +"S000\r")
+        msg = "Asking Device ID=" + currentValue + " to search path...\n"
+        self.logger(msg)
+
+    def allRepeaterSearchPath(self):
+        self.send(b"ART00000000S000\r")
+        self.logger("Asking all repeater to search path... Please wait for 1 minute for reply..")
+
+    def mcuIDChecking(self):
+        self.send(b"ARI\r")
+        # msg = "Central ID=" + currentValue + " to respond...\n" 
+        # self.logger(msg)
+    
+    def decode(self,b):
+
+        m = re.match('RA(\w)(\d{8})(.{2})?', b)
+        if m:
+            print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
+
+            cmd = m.group(1)
+            repeater = m.group(2)
+            RSSI = m.group(3)
+
+            if cmd == 'A':
+                msg = "Repeater with ID="+ repeater + " has acknowledged..\n"
+                self.logger(msg)
+                # repeaters.add(repeater)
+            elif cmd == "I":
+                msg = "Central ID=" + repeater + "\n"
+                self.logger(msg)
+            elif cmd == "C":
+                msg = "Repeater with ID=" + repeater + " has responded or finished searching..\n"
+                self.logger(msg)
+
+        else:
+            print 'Cant decode', b
 
     def on_exit(self):
         """When you click to exit, this function is called"""
@@ -109,10 +154,11 @@ class GuiPart:
         """
         while self.queue.qsize():
             try:
+                # print 'queue'
                 msg = self.queue.get(0)
                 # Check contents of message and do what it says
                 # As a test, we simply print it
-                self.logger(msg+"\n")
+                self.decode(msg)
             except Queue.Empty:
                 pass
 
@@ -159,23 +205,6 @@ class ThreadedClient:
         self.master.after(1000, self.periodicCall)
 
 
-    def decode(b):
-
-        m = re.match('RA(\w)(\d{8})(.{2})?', b)
-        if m:
-            print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
-
-            cmd = m.group(1)
-            repeater = m.group(2)
-            RSSI = m.group(3)
-
-            if cmd == 'I':
-                pass
-                # repeaters.add(repeater)
-
-        else:
-            print 'Something happen', b
-
     def workerThread1(self):
         """
         This is where we handle the asynchronous I/O. For example, it may be
@@ -197,10 +226,11 @@ class ThreadedClient:
                     buffer += b
 
                 if b == '\r':
-                    print buffer, len(buffer)
+                    print "Receive:", buffer, len(buffer)
                     # self.decode(buffer)
                     self.queue.put(buffer)
                     buffer = ''
+                    
         except:
             print 'Closed', sys.exc_info()[0]
             self.d.close()
@@ -209,7 +239,7 @@ class ThreadedClient:
         self.running = 0
 
     def send(self, cmd):
-        print self.d.write(cmd), cmd
+        print "Sending : Bytes sent-", self.d.write(cmd),"Command -", cmd
 
 if __name__ == '__main__':
     try:
