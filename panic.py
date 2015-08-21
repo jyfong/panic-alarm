@@ -89,10 +89,11 @@ class GuiPart:
         scrollbar3.config( command = self.log.yview)
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
+        master.resizable(0,0)
 
         
         for repeater in self.table:
-            self.l1.insert(END, repeater['n'])
+            self.l1.insert(END, repeater['repeater'])
 
     def logger(self, msg):
         self.log.insert(END, msg)
@@ -140,9 +141,9 @@ class GuiPart:
             elif cmd == "I":
                 msg = "Central ID=" + repeater + "\n"
                 self.logger(msg)
-                if not self.table.find_one(n=repeater):
+                if not self.table.find_one(repeater=repeater):
                     self.l1.insert(END, repeater)
-                    self.table.insert(dict(n=repeater))
+                    self.table.insert(dict(repeater=repeater))
             elif cmd == "C":
                 msg = "Repeater with ID=" + repeater + " has responded or finished searching..\n"
                 self.logger(msg)
@@ -227,7 +228,7 @@ class ThreadedClient:
         buffer = ''
         try:
             while self.running:
-                time.sleep(0.1)
+                time.sleep(0.01)
                 b = self.d.read(1)
 
                 if b != '' and b != '\r':
@@ -257,6 +258,8 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print 'Interrupted'
         try:
+            client.endApplication()
             sys.exit(1)
         except SystemExit:
+            client.endApplication()
             os._exit(0)
