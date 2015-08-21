@@ -209,6 +209,7 @@ class ThreadedClient:
         if not self.running:
             # This is the brutal stop of the system. You may want to do
             # some cleanup before actually shutting it down.
+            self.d.close()
             import sys
             sys.exit(1)
         self.master.after(1000, self.periodicCall)
@@ -248,6 +249,8 @@ class ThreadedClient:
 
     def send(self, cmd):
         print "Sending : Bytes sent-", self.d.write(cmd),"Command -", cmd
+
+
 
 if __name__ == '__main__':
     try:
