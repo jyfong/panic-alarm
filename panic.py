@@ -33,6 +33,7 @@ class GuiPart:
         # create a toplevel menu
         menubar = Menu(master)
         menubar.add_command(label="Quit", command=endCommand)
+        menubar.add_command(label="Clear DB", command=self.clearDatabase)
 
         # display the menu
         master.config(menu=menubar)
@@ -56,7 +57,7 @@ class GuiPart:
         b4 = Button(topFrame,text="All Repeater Search Path", command=self.allRepeaterSearchPath )
         b4.grid(row=0,column=4)
         b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking )
-        b5.grid(row=0,column=5)
+        b5.grid(row=0,column=5, sticky=E)
 
         #Initialize variables for UI
         listbox_width = 51
@@ -87,6 +88,8 @@ class GuiPart:
         self.log.grid(row=0,column=0)
         scrollbar3.grid(row=0,column=1,sticky=N+S)
         scrollbar3.config( command = self.log.yview)
+        b6 = Button(bottomFrame,text="Clear log", command=self.clearLogger )
+        b6.grid(row=1,column=0, sticky=W)
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
         master.resizable(0,0)
@@ -97,6 +100,9 @@ class GuiPart:
 
     def logger(self, msg):
         self.log.insert(END, msg)
+
+    def clearLogger(self):
+        self.log.delete('0.0', END)
 
     def configCentralId(self):
         currentValue = self.l1.get(self.l1.curselection())
@@ -124,6 +130,13 @@ class GuiPart:
         self.send(b"ARI\r")
         # msg = "Central ID=" + currentValue + " to respond...\n" 
         # self.logger(msg)
+    
+    def clearDatabase(self):
+        try:
+            if tkMessageBox.askyesno("Database Operation", "Do you want to clear the database?"):
+                self.table.drop()
+        except:
+            print "Database already drop and don't exist"
     
     def decode(self,b):
 
