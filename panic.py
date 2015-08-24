@@ -1,4 +1,5 @@
 from Tkinter import *
+from PIL import ImageTk, Image
 import time
 import threading
 import random
@@ -10,6 +11,7 @@ import tkMessageBox
 import os
 import dataset
 
+state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
 db = dataset.connect('sqlite:///mydatabase.db')
 
@@ -254,17 +256,28 @@ class GuiPart:
     
     def openMap(self):
         # topLevel method is to open new window
-        mapWindow = Toplevel(self.master)
-        mapWindow.geometry(self.initPosition)
+        # 
         
+        mapWindow = Toplevel(self.master)
+        self.mapWindow = mapWindow
+        mapWindow.attributes('-fullscreen', True)
+        mapWindow.geometry(self.initPosition)
+        mapWindow.bind('<Escape>',self.toggleFullScreen)
+
         # Frames for map window
         mapWindowTop = Frame(mapWindow)
         mapWindowTop.pack(side=TOP)
         mapWindowBottom = Frame(mapWindow)
         mapWindowBottom.pack()
 
-        canvas = Canvas(mapWindowBottom, width=200, height=100)
+        canvas = Canvas(mapWindowBottom, width=mapWindow.winfo_screenwidth()-4, height=mapWindow.winfo_screenheight()-4)
         canvas.pack()
+
+        im = Image.open('map.jpg')
+        # Put the image into a canvas compatible class, and stick in an
+        # arbitrary variable to the garbage collector doesn't destroy it
+        canvas.image = ImageTk.PhotoImage(im)
+        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
         # Buttons for map window
         buttonwidth = 20
@@ -276,7 +289,16 @@ class GuiPart:
     def uploadImage(self):
         pass
 
-
+    
+    def toggleFullScreen(self,event):
+        global state
+        if state==0:
+            self.mapWindow.attributes('-fullscreen', False)
+            state = 1
+        elif state==1:
+            self.mapWindow.attributes('-fullscreen', True)
+            state = 0
+        
 
 class ThreadedClient:
     """
