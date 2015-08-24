@@ -22,13 +22,13 @@ class GuiPart:
         self.repeater = None
         self.current = None
         self.table = db['repeater']
-
+        self.initPosition = "+300+30"
 
 
         # Set up the GUI
 
         master.title("DF Panic Alarm")
-        master.geometry("+300+30")
+        master.geometry(self.initPosition)
 
 
         # create a toplevel menu
@@ -247,9 +247,35 @@ class GuiPart:
             except Queue.Empty:
                 pass
 
+
+    ####                 ###
+    ####   Map Window    ###
+    ####                 ###
+    
     def openMap(self):
+        # topLevel method is to open new window
         mapWindow = Toplevel(self.master)
-        mapWindow.geometry("+300+30")
+        mapWindow.geometry(self.initPosition)
+        
+        # Frames for map window
+        mapWindowTop = Frame(mapWindow)
+        mapWindowTop.pack(side=TOP)
+        mapWindowBottom = Frame(mapWindow)
+        mapWindowBottom.pack()
+
+        canvas = Canvas(mapWindowBottom, width=200, height=100)
+        canvas.pack()
+
+        # Buttons for map window
+        buttonwidth = 20
+        b1 = Button(mapWindowTop,text="Upload" ,command=self.uploadImage , width=buttonwidth)
+        b1.grid(row=0,column=0, sticky=W)
+        b2 = Button(mapWindowTop,text="Ask Respond" , width=buttonwidth )
+        b2.grid(row=0,column=1, sticky=W)
+
+    def uploadImage(self):
+        pass
+
 
 
 class ThreadedClient:
@@ -335,7 +361,6 @@ class ThreadedClient:
 
     def send(self, cmd):
         print "Sending : Bytes sent-", self.d.write(cmd),"Command -", cmd
-
 
 
 if __name__ == '__main__':
