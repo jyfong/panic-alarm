@@ -15,20 +15,40 @@ class SampleApp(tk.Tk):
         self._drag_data = {"x": 0, "y": 0, "item": None}
 
         # create a couple movable objects
-        self._create_token((100, 100), "white")
-        self._create_token((200, 100), "black")
+        self._create_token((100, 100), "white", '0001')
+        self._create_token((200, 100), "black", '0005')
+
+        p = Point(self.canvas, (300, 300), '00000005')
+
+
+
+
+
+    def _create_token(self, coord, color, repeater):
+        '''Create a token at the given coordinate in the given color'''
+        (x,y) = coord
+        print self.canvas.create_oval(x-25, y-25, x+25, y+25, 
+                                outline=color, fill=color, tags=("token", repeater))
+
+
+class Point:
+    def __init__(self, canvas, coord, repeater, color='black'):
+
+        (x,y) = coord
+        self.item = canvas.create_oval(x-25, y-25, x+25, y+25, 
+                                outline=color, fill=color, tags="token")
+        self.repeater = repeater
+        self.canvas = canvas
+
+
+        self._drag_data = {"x": 0, "y": 0, "item": None}
 
         # add bindings for clicking, dragging and releasing over
         # any object with the "token" tag
-        self.canvas.tag_bind("token", "<ButtonPress-1>", self.OnTokenButtonPress)
-        self.canvas.tag_bind("token", "<ButtonRelease-1>", self.OnTokenButtonRelease)
-        self.canvas.tag_bind("token", "<B1-Motion>", self.OnTokenMotion)
+        canvas.tag_bind(self.item, "<ButtonPress-1>", self.OnTokenButtonPress)
+        canvas.tag_bind(self.item, "<ButtonRelease-1>", self.OnTokenButtonRelease)
+        canvas.tag_bind(self.item, "<B1-Motion>", self.OnTokenMotion)
 
-    def _create_token(self, coord, color):
-        '''Create a token at the given coordinate in the given color'''
-        (x,y) = coord
-        self.canvas.create_oval(x-25, y-25, x+25, y+25, 
-                                outline=color, fill=color, tags="token")
 
     def OnTokenButtonPress(self, event):
         '''Being drag of an object'''
@@ -43,6 +63,8 @@ class SampleApp(tk.Tk):
         self._drag_data["item"] = None
         self._drag_data["x"] = 0
         self._drag_data["y"] = 0
+        print self.repeater
+
 
     def OnTokenMotion(self, event):
         '''Handle dragging of an object'''
@@ -54,6 +76,8 @@ class SampleApp(tk.Tk):
         # record the new position
         self._drag_data["x"] = event.x
         self._drag_data["y"] = event.y
+
+
 
 if __name__ == "__main__":
     app = SampleApp()

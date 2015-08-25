@@ -134,7 +134,9 @@ class GuiPart:
 
     def updateEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())
-        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(),address=self.addressVar.get(),phone=self.phoneVar.get()), ['repeater'] )
+        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(),address=self.addressVar.get(),phone=self.phoneVar.get(), coordx=100, coordy=100), ['repeater'] )
+
+
 
     def deleteEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())
@@ -209,7 +211,7 @@ class GuiPart:
 
     def decode(self,b):
 
-        m = re.match('RA(\w)(\d{8})(.{2})?', b)
+        m = re.match('.*RA(\w)(\d{8})(.{2})?', b)
         if m:
             print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
 
@@ -304,14 +306,14 @@ class GuiPart:
         mapWindowBottom = Frame(mapWindow)
         mapWindowBottom.pack()
 
-        canvas = Canvas(mapWindowBottom, width=mapWindow.winfo_screenwidth()-4, height=mapWindow.winfo_screenheight()-4)
-        canvas.pack()
+        self.canvas = Canvas(mapWindowBottom, width=mapWindow.winfo_screenwidth()-4, height=mapWindow.winfo_screenheight()-4)
+        self.canvas.pack()
 
         im = Image.open('map.jpg')
         # Put the image into a canvas compatible class, and stick in an
         # arbitrary variable to the garbage collector doesn't destroy it
-        canvas.image = ImageTk.PhotoImage(im)
-        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
+        self.canvas.image = ImageTk.PhotoImage(im)
+        self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
 
         # Buttons for map window
         buttonwidth = 20
@@ -319,6 +321,13 @@ class GuiPart:
         b1.grid(row=0,column=0, sticky=W)
         b2 = Button(mapWindowTop,text="Ask Respond" , width=buttonwidth )
         b2.grid(row=0,column=1, sticky=W)
+
+
+        for item in self.table:
+            print item
+            Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'])
+
+
 
     def uploadImage(self):
         pass
@@ -332,7 +341,55 @@ class GuiPart:
         elif state==1:
             self.mapWindow.attributes('-fullscreen', True)
             state = 0
-        
+
+
+class Point:
+    def __init__(self, table, canvas, coord, repeater, color='black'):
+
+        (x,y) = coord
+        self.item = canvas.create_oval(x-25, y-25, x+25, y+25, 
+                                outline=color, fill=color, tags="token")
+        self.repeater = repeater
+        self.canvas = canvas
+        self.table = table
+
+        self._drag_data = {"x": 0, "y": 0, "item": None}
+
+        # add bindings for clicking, dragging and releasing over
+        # any object with the "token" tag
+        canvas.tag_bind(self.item, "<ButtonPress-1>", self.OnTokenButtonPress)
+        canvas.tag_bind(self.item, "<ButtonRelease-1>", self.OnTokenButtonRelease)
+        canvas.tag_bind(self.item, "<B1-Motion>", self.OnTokenMotion)
+
+
+    def OnTokenButtonPress(self, event):
+        '''Being drag of an object'''
+        # record the item and its location
+        self._drag_data["item"] = self.canvas.find_closest(event.x, event.y)[0]
+        self._drag_data["x"] = event.x
+        self._drag_data["y"] = event.y
+
+    def OnTokenButtonRelease(self, event):
+        '''End drag of an object'''
+        # reset the drag information
+        self._drag_data["item"] = None
+        self._drag_data["x"] = 0
+        self._drag_data["y"] = 0
+
+        data = dict(repeater=self.repeater, coordx=event.x, coordy=event.y)
+        self.table.update(data, ['repeater'])
+
+
+    def OnTokenMotion(self, event):
+        '''Handle dragging of an object'''
+        # compute how much this object has moved
+        delta_x = event.x - self._drag_data["x"]
+        delta_y = event.y - self._drag_data["y"]
+        # move the object the appropriate amount
+        self.canvas.move(self._drag_data["item"], delta_x, delta_y)
+        # record the new position
+        self._drag_data["x"] = event.x
+        self._drag_data["y"] = event.y
 
 class ThreadedClient:
     """
@@ -399,6 +456,13 @@ class ThreadedClient:
             while self.running:
                 time.sleep(0.01)
                 b = self.d.read(1)
+
+                # if b == '':
+                #     continue
+
+                # if not (ord(b) == 13 or (ord(b) in range(48, 58)) or (ord(b) in range(65, 91))):
+                #     print b
+                #     continue
 
                 if b != '' and b != '\r':
                     buffer += b
