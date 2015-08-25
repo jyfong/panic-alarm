@@ -49,11 +49,13 @@ class GuiPart:
         master.config(menu=menubar)
 
         # Init a frame for whole window
-        topFrame = Frame(master)
+        topFrame = LabelFrame(master, text="Configure", padx= 5 , pady= 5)
         topFrame.pack(side=TOP,fill=BOTH, expand=1)
-        middleFrame = Frame(master)
-        middleFrame.pack(side=TOP,fill=BOTH, expand=1)
-        bottomFrame = Frame(master)
+        middleFrame = LabelFrame(master , text="Devices", padx= 5 , pady= 5)
+        middleFrame.pack(side=LEFT,fill=BOTH, expand=1)
+        middleFrameRight = LabelFrame(master , text="Information", padx= 10 , pady= 10)
+        middleFrameRight.pack(side=LEFT,fill=BOTH, expand=1)
+        bottomFrame = LabelFrame(master,text="Event Log", padx= 5 , pady= 5 )
         bottomFrame.pack(side=BOTTOM,fill=BOTH, expand=1)
 
 
@@ -80,23 +82,37 @@ class GuiPart:
         listbox_width = 40
 
         # Middle Frame
-        # Receive
-        lbl1 = Label(middleFrame, text="Receive")
-        lbl1.grid(row=0,column=0)
+        # Devices and owner information
         scrollbar = Scrollbar(middleFrame)
-        self.l1 = Listbox(middleFrame, width=listbox_width,yscrollcommand=scrollbar.set)
+        self.l1 = Listbox(middleFrame, width=listbox_width,yscrollcommand=scrollbar.set, exportselection=0, height=24)
         self.l1.grid(row=1,column=0)
+        self.l1.bind("<<ListboxSelect>>", self.loadEntry)
         scrollbar.grid(row=1,column=1,sticky=N+S)
         scrollbar.config( command = self.l1.yview)
+        nameLabel = Label(middleFrameRight, text="Name")
+        nameLabel.grid(row=0, column=0)
+        self.nameVar = StringVar()
+        self.name = Entry(middleFrameRight, textvariable=self.nameVar)
+        self.name.grid(row=1,column=0)
+        addressLabel = Label(middleFrameRight, text="Address")
+        addressLabel.grid(row=2, column=0)
+        self.addressVar = StringVar()
+        self.address = Entry(middleFrameRight, textvariable=self.addressVar)
+        self.address.grid(row=3,column=0)
+        phoneLabel = Label(middleFrameRight, text="Phone")
+        phoneLabel.grid(row=4, column=0)
+        self.phoneVar = StringVar()
+        self.phone = Entry(middleFrameRight, textvariable=self.phoneVar)
+        self.phone.grid(row=5,column=0)
+
         
-        # Send
-        # lbl2 = Label(middleFrame, text="Send")
-        # lbl2.grid(row=0,column=2)
-        # scrollbar2 = Scrollbar(middleFrame)
-        # self.l2 = Listbox(middleFrame, width=listbox_width,yscrollcommand=scrollbar2.set)
-        # self.l2.grid(row=1,column=2)
-        # scrollbar2.grid(row=1,column=3,sticky=N+S)
-        # scrollbar2.config( command = self.l2.yview)
+        # Middle Frame Buttons 
+        # b9 = Button(middleFrameRight,text="Load", command=self.loadEntry , width=buttonwidth)
+        # b9.grid(row=6,column=0, sticky=W)
+        b10 = Button(middleFrameRight,text="Update", command=self.updateEntry , width=buttonwidth)
+        b10.grid(row=7,column=0, sticky=W)
+        b11 = Button(middleFrameRight,text="Delete", command=self.deleteEntry , width=buttonwidth)
+        b11.grid(row=8,column=0, sticky=W)
         
         # Bottom Frame 
         # Console logging
@@ -109,12 +125,30 @@ class GuiPart:
         clearlog_button.grid(row=1,column=0, sticky=W)
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
-        master.resizable(0,0)
+        # master.resizable(0,0)
 
 
         for repeater in self.table:
             self.l1.insert(END, repeater['repeater'])
+        self.l1.select_set(0)
 
+    def updateEntry(self):
+        repeaterID = self.l1.get(self.l1.curselection())
+        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(),address=self.addressVar.get(),phone=self.phoneVar.get()), ['repeater'] )
+
+    def deleteEntry(self):
+        repeaterID = self.l1.get(self.l1.curselection())
+        self.table.delete(repeater=repeaterID)
+        self.l1.delete(0,END)
+        for repeater in self.table:
+            self.l1.insert(END, repeater['repeater'])
+
+    def loadEntry(self, event):
+        repeaterID = self.l1.get(self.l1.curselection())
+        row = self.table.find_one(repeater=repeaterID)
+        self.nameVar.set(row['name'])
+        self.addressVar.set(row['address'])
+        self.phoneVar.set(row['phone'])
 
     def logger(self, msg):
         self.log.insert(END, msg)
