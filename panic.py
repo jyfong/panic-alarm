@@ -306,8 +306,8 @@ class GuiPart:
         self.openImage(row["imageName"])
 
         for item in self.table:
-            print item
-            Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'])
+            if item['coordx'] != None and item['coordy'] != None:
+                Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'])
 
     def openImage(self,filename):
         im = Image.open(filename)
