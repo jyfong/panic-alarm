@@ -11,6 +11,8 @@ import d2xx
 import tkMessageBox
 import os
 import dataset
+import winsound
+import time
 
 state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
@@ -26,6 +28,7 @@ class GuiPart:
         self.current = None
         self.table = db['repeater']
         self.tableImage = db['image']
+        self.tableLog = db['log']
         self.initPosition = "+300+30"
 
 
@@ -73,12 +76,15 @@ class GuiPart:
         b4.grid(row=0,column=3, sticky=W)
         b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking, width=buttonwidth )
         b5.grid(row=0,column=4, sticky=W)
+        # Second Row
         b6 = Button(topFrame,text="Check Repeater Central ID", command=self.repeaterCheckCentralID , width=buttonwidth)
         b6.grid(row=1,column=0, sticky=W)
         b7 = Button(topFrame,text="Check Repeater Path", command=self.repeaterCheckPath , width=buttonwidth)
         b7.grid(row=1,column=1, sticky=W)
         b8 = Button(topFrame,text="Map", command=self.openMap , width=buttonwidth)
         b8.grid(row=1,column=2, sticky=W)
+        b9 = Button(topFrame,text="View Logs", command=self.openLog , width=buttonwidth)
+        b9.grid(row=1,column=3, sticky=W)
 
         #Initialize variables for UI
         listbox_width = 40
@@ -138,8 +144,6 @@ class GuiPart:
         repeaterID = self.l1.get(self.l1.curselection())
         self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(),address=self.addressVar.get(),phone=self.phoneVar.get(), coordx=100, coordy=100), ['repeater'] )
 
-
-
     def deleteEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())
         self.table.delete(repeater=repeaterID)
@@ -155,7 +159,11 @@ class GuiPart:
         self.phoneVar.set(row['phone'])
 
     def logger(self, msg):
+        now = time.localtime()
+        msg = time.strftime("%y/%m/%d %H:%M", now) + " " +  msg
+        timeinsec = time.time()
         self.log.insert(END, msg)
+        self.tableLog.insert(dict(time=timeinsec,msg=msg))
 
     def clearLogger(self):
         self.log.delete('0.0', END)
@@ -211,56 +219,6 @@ class GuiPart:
             self.send(b"ARR\r")
             self.logger("MCU Reset..\n")
 
-    def decode(self,b):
-
-        m = re.match('.*RA(\w)(\d{8})(.{2})?', b)
-        if m:
-            print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
-
-            cmd = m.group(1)
-            repeater = m.group(2)
-            RSSI = m.group(3)
-
-            if cmd == 'A':
-                msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
-                self.logger(msg)
-            elif cmd == "I":
-                msg = "Central ID = " + repeater + "\n"
-                self.logger(msg)
-                if not self.table.find_one(repeater=repeater):
-                    self.l1.insert(END, repeater)
-                    self.table.insert(dict(repeater=repeater))
-            elif cmd == "E":
-                msg = "Repeater with ID = " + repeater + " has responded..\n"
-                self.logger(msg)
-            elif cmd == "C":
-                msg = "Repeater with ID = " + repeater + " has finished searching path..\n"
-                self.logger(msg)
-                
-                if 'searchedPath' in dir(self):
-                    self.searchedPath.append(repeater)
-                    print self.searchedPath
-                    listofRepeaters = self.l1.get(0, END)
-                    diff = list(set(listofRepeaters) - set(self.searchedPath))
-                    for i in range(len(self.l1.get(0, END))):
-                        self.l1.itemconfig(i, {'bg' : 'green'})
-                    for repeater in diff:
-                        index = self.getIndexOfListbox(repeater)
-                        self.l1.itemconfig(index, {'bg':'red'})         
-
-                else:
-                    self.searchedPath = []
-                    self.searchedPath.append(repeater)
-            elif cmd == "F":
-                msg = "Repeater central ID = " + repeater + " ..\n"
-                self.logger(msg)
-            elif int(cmd) in range(1,4):
-                msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
-                self.logger(msg)
-
-
-        else:
-            print 'Cant decode', b
 
     def getIndexOfListbox(self,item):
         for i in range(len(self.l1.get(0, END))):
@@ -272,6 +230,28 @@ class GuiPart:
         if tkMessageBox.askyesno("Exit", "Do you want to quit the application?"):
             root.destroy()
             self.endCommand()
+
+    ####                 ###
+    ####   Log Window    ###
+    ####                 ###    
+
+    def openLog(self):
+        logWindow = Toplevel(self.master)
+        logWindowTop = LabelFrame(logWindow, text="Event Log")
+        logWindowTop.pack(side=TOP)
+
+        scrollbar = Scrollbar(logWindowTop)
+        historylog = Text(logWindowTop,yscrollcommand=scrollbar.set)
+        historylog.grid(row=0,column=0)
+        scrollbar.grid(row=0,column=1,sticky=N+S)
+        scrollbar.config( command = historylog.yview)
+
+        logs = self.tableLog.all()
+
+        for log in logs:
+            msg = log["msg"]
+            historylog.insert(END,msg)
+
 
     ####                 ###
     ####   Map Window    ###
@@ -330,6 +310,64 @@ class GuiPart:
             self.mapWindow.attributes('-fullscreen', True)
             state = 0
 
+    def decode(self,b):
+
+        m = re.match('.*RA(\w)(\d{8})(.{2})?', b)
+        if m:
+            print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
+
+            cmd = m.group(1)
+            repeater = m.group(2)
+            RSSI = m.group(3)
+
+            if cmd == 'A':
+                msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
+                self.logger(msg)
+            elif cmd == "I":
+                msg = "Central ID = " + repeater + "\n"
+                self.logger(msg)
+                if not self.table.find_one(repeater=repeater):
+                    self.l1.insert(END, repeater)
+                    self.table.insert(dict(repeater=repeater))
+            elif cmd == "E":
+                msg = "Repeater with ID = " + repeater + " has responded..\n"
+                self.logger(msg)
+            elif cmd == "C":
+                msg = "Repeater with ID = " + repeater + " has finished searching path..\n"
+                self.logger(msg)
+                
+                if 'searchedPath' in dir(self):
+                    self.searchedPath.append(repeater)
+                    print self.searchedPath
+                    listofRepeaters = self.l1.get(0, END)
+                    diff = list(set(listofRepeaters) - set(self.searchedPath))
+                    for i in range(len(self.l1.get(0, END))):
+                        self.l1.itemconfig(i, {'bg' : 'green'})
+                    for repeater in diff:
+                        index = self.getIndexOfListbox(repeater)
+                        self.l1.itemconfig(index, {'bg':'red'})         
+
+                else:
+                    self.searchedPath = []
+                    self.searchedPath.append(repeater)
+            elif cmd == "F":
+                msg = "Repeater central ID = " + repeater + " ..\n"
+                self.logger(msg)
+            elif cmd == "P":
+                Freq = 2500 # Set Frequency To 2500 Hertz
+                Dur = 1000 # Set Duration To 1000 ms == 1 second
+                winsound.Beep(Freq,Dur)
+                msg = "Repeater central ID = " + repeater + " panic alarm! \n"
+                self.logger(msg)
+
+            elif int(cmd) in range(1,4):
+                msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
+                self.logger(msg)
+
+
+        else:
+            print 'Cant decode', b
+
     def processIncoming(self):
         """
         Handle all the messages currently in the queue (if any).
@@ -352,7 +390,7 @@ class Point:
     def __init__(self, table, canvas, coord, repeater, color='black'):
 
         (x,y) = coord
-        self.item = canvas.create_oval(x-25, y-25, x+25, y+25, 
+        self.item = canvas.create_oval(x-10, y-10, x+10, y+10, 
                                 outline=color, fill=color, tags="token")
         self.repeater = repeater
         self.canvas = canvas
