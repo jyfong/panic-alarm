@@ -303,25 +303,24 @@ class GuiPart:
         # b2.grid(row=0,column=1, sticky=W)
 
         row = self.tableImage.all().next()
-        im = Image.open(row["imageName"])
-        self.canvas.image = ImageTk.PhotoImage(im)
-        self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
+        self.openImage(row["imageName"])
 
         for item in self.table:
             print item
             Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'])
 
-
-
-    def uploadImage(self):
-        filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
+    def openImage(self,filename):
         im = Image.open(filename)
-        self.tableImage.insert(dict(imageName=filename))
         # Put the image into a canvas compatible class, and stick in an
         # arbitrary variable to the garbage collector doesn't destroy it
         self.canvas.image = ImageTk.PhotoImage(im)
         self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
-    
+
+    def uploadImage(self):
+        filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
+        self.openImage(filename)
+        self.tableImage.insert(dict(imageName=filename))
+
     def toggleFullScreen(self,event):
         global state
         if state==0:
