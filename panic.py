@@ -1,5 +1,6 @@
 from Tkinter import *
 from PIL import ImageTk, Image
+import tkFileDialog
 import time
 import threading
 import random
@@ -24,6 +25,7 @@ class GuiPart:
         self.repeater = None
         self.current = None
         self.table = db['repeater']
+        self.tableImage = db['image']
         self.initPosition = "+300+30"
 
 
@@ -271,28 +273,12 @@ class GuiPart:
             root.destroy()
             self.endCommand()
 
-    def processIncoming(self):
-        """
-        Handle all the messages currently in the queue (if any).
-        """
-        while self.queue.qsize():
-            try:
-                # print 'queue'
-                msg = self.queue.get(0)
-                # Check contents of message and do what it says
-                # As a test, we simply print it
-                self.decode(msg)
-            except Queue.Empty:
-                pass
-
-
     ####                 ###
     ####   Map Window    ###
     ####                 ###
     
     def openMap(self):
         # topLevel method is to open new window
-        # 
         
         mapWindow = Toplevel(self.master)
         self.mapWindow = mapWindow
@@ -309,19 +295,17 @@ class GuiPart:
         self.canvas = Canvas(mapWindowBottom, width=mapWindow.winfo_screenwidth()-4, height=mapWindow.winfo_screenheight()-4)
         self.canvas.pack()
 
-        im = Image.open('map.jpg')
-        # Put the image into a canvas compatible class, and stick in an
-        # arbitrary variable to the garbage collector doesn't destroy it
-        self.canvas.image = ImageTk.PhotoImage(im)
-        self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
-
         # Buttons for map window
         buttonwidth = 20
         b1 = Button(mapWindowTop,text="Upload" ,command=self.uploadImage , width=buttonwidth)
         b1.grid(row=0,column=0, sticky=W)
-        b2 = Button(mapWindowTop,text="Ask Respond" , width=buttonwidth )
-        b2.grid(row=0,column=1, sticky=W)
+        # b2 = Button(mapWindowTop,text="Ask Respond" , width=buttonwidth )
+        # b2.grid(row=0,column=1, sticky=W)
 
+        row = self.tableImage.all().next()
+        im = Image.open(row["imageName"])
+        self.canvas.image = ImageTk.PhotoImage(im)
+        self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
 
         for item in self.table:
             print item
@@ -330,8 +314,13 @@ class GuiPart:
 
 
     def uploadImage(self):
-        pass
-
+        filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
+        im = Image.open(filename)
+        self.tableImage.insert(dict(imageName=filename))
+        # Put the image into a canvas compatible class, and stick in an
+        # arbitrary variable to the garbage collector doesn't destroy it
+        self.canvas.image = ImageTk.PhotoImage(im)
+        self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
     
     def toggleFullScreen(self,event):
         global state
@@ -342,6 +331,23 @@ class GuiPart:
             self.mapWindow.attributes('-fullscreen', True)
             state = 0
 
+    def processIncoming(self):
+        """
+        Handle all the messages currently in the queue (if any).
+        """
+        while self.queue.qsize():
+            try:
+                # print 'queue'
+                msg = self.queue.get(0)
+                # Check contents of message and do what it says
+                # As a test, we simply print it
+                if msg == "exit":
+                    if tkMessageBox.showerror("Device Not Found!", "Please connect Central Device .."):
+                        os._exit(0)
+                else:
+                    self.decode(msg)
+            except Queue.Empty:
+                pass
 
 class Point:
     def __init__(self, table, canvas, coord, repeater, color='black'):
@@ -429,7 +435,6 @@ class ThreadedClient:
         if not self.running:
             # This is the brutal stop of the system. You may want to do
             # some cleanup before actually shutting it down.
-            self.d.close()
             import sys
             sys.exit(1)
         self.master.after(1000, self.periodicCall)
@@ -445,11 +450,14 @@ class ThreadedClient:
 
         time.sleep(1) # cheat the program to let UI finish loading
 
-
-        self.d = d2xx.open(0)
-        self.d.setBaudRate(115200)
-        self.d.setTimeouts(1, 0)
-
+        try:
+            self.d = d2xx.open(0)
+            self.d.setBaudRate(115200)
+            self.d.setTimeouts(1, 0)
+        except:
+            self.queue.put("exit")
+            self.running = 0
+            return
         
         buffer = ''
         try:
@@ -474,10 +482,12 @@ class ThreadedClient:
                     
         except:
             print 'Closed', sys.exc_info()[0]
+
             self.d.close()
 
     def endApplication(self):
         self.running = 0
+        self.d.close()
 
     def send(self, cmd):
         print "Sending : Bytes sent-", self.d.write(cmd),"Command -", cmd
