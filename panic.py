@@ -13,6 +13,7 @@ import os
 import dataset
 import winsound
 import time
+import tkSimpleDialog
 
 state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
@@ -83,7 +84,7 @@ class GuiPart:
         b7.grid(row=1,column=1, sticky=W)
         b8 = Button(topFrame,text="Map", command=self.openMap , width=buttonwidth)
         b8.grid(row=1,column=2, sticky=W)
-        b9 = Button(topFrame,text="View Logs", command=self.openLog , width=buttonwidth)
+        b9 = Button(topFrame,text="View Old Logs", command=self.openLog , width=buttonwidth)
         b9.grid(row=1,column=3, sticky=W)
 
         #Initialize variables for UI
@@ -171,19 +172,19 @@ class GuiPart:
     def configCentralId(self):
         currentValue = self.l1.get(self.l1.curselection())
         self.send(b"ART"+ currentValue +"G\r")
-        msg = "Setting Device ID=" + currentValue + " to this central\n" 
+        msg = "Setting Device ID = " + currentValue + " to this central\n" 
         self.logger(msg)
 
     def askRespond(self):
         currentValue = self.l1.get(self.l1.curselection())
         self.send(b"ART"+ currentValue +"Z\r")
-        msg = "Asking Device ID=" + currentValue + " to respond...\n" 
+        msg = "Asking Device ID = " + currentValue + " to respond...\n" 
         self.logger(msg)
 
     def repeaterSearchPath(self):
         currentValue = self.l1.get(self.l1.curselection())
         self.send(b"ART"+ currentValue +"S000\r")
-        msg = "Asking Device ID=" + currentValue + " to search path... Please wait 1 minute..\n"
+        msg = "Asking Device ID = " + currentValue + " to search path... Please wait 1 minute..\n"
         self.logger(msg)
 
     def allRepeaterSearchPath(self):
@@ -208,12 +209,15 @@ class GuiPart:
         self.logger(msg)
     
     def clearDatabase(self):
-        try:
-            if tkMessageBox.askyesno("Database Operation", "Do you want to clear the database?"):
-                self.table.drop()
-        except:
-            print "Database already drop and don't exist"
-    
+        result =  tkSimpleDialog.askstring("Database Operation", "Please enter password :")
+        if result == "df1397":
+            self.table.drop()
+            self.tableImage.drop()
+            self.tableLog.drop()
+            tkMessageBox.showinfo("Success","Database deleted ..")
+        else:
+            tkMessageBox.showwarning("Error","Wrong Password!")
+
     def mcuReset(self):
         if tkMessageBox.askyesno("MCU Operation", "Do you want to reset the MCU?"):
             self.send(b"ARR\r")
@@ -287,7 +291,7 @@ class GuiPart:
 
         for item in self.table:
             if item['coordx'] != None and item['coordy'] != None:
-                Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'])
+                Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
 
     def openImage(self,filename):
         im = Image.open(filename)
@@ -309,6 +313,16 @@ class GuiPart:
         elif state==1:
             self.mapWindow.attributes('-fullscreen', True)
             state = 0
+
+    def panicAlarm(self,msg):
+        cmd, repeater = msg
+        tkMessageBox.showwarning(
+            "!!!!!PANIC!!!!!",
+            "Panic Alarm from \n(%s)" % repeater
+        )
+        Freq = 2500 # Set Frequency To 2500 Hertz
+        Dur = 500 # Set Duration To 1000 ms == 1 second
+        winsound.Beep(Freq,Dur)
 
     def decode(self,b):
 
@@ -354,10 +368,8 @@ class GuiPart:
                 msg = "Repeater central ID = " + repeater + " ..\n"
                 self.logger(msg)
             elif cmd == "P":
-                Freq = 2500 # Set Frequency To 2500 Hertz
-                Dur = 1000 # Set Duration To 1000 ms == 1 second
-                winsound.Beep(Freq,Dur)
-                msg = "Repeater central ID = " + repeater + " panic alarm! \n"
+                self.queue.put((cmd,repeater))
+                msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
                 self.logger(msg)
 
             elif int(cmd) in range(1,4):
@@ -381,17 +393,20 @@ class GuiPart:
                 if msg == "exit":
                     if tkMessageBox.showerror("Device Not Found!", "Please connect Central Device .."):
                         os._exit(0)
+                elif type(msg) is tuple:
+                    self.panicAlarm(msg)
                 else:
                     self.decode(msg)
             except Queue.Empty:
                 pass
 
 class Point:
-    def __init__(self, table, canvas, coord, repeater, color='black'):
+    def __init__(self, table, canvas, coord, repeater,name, color='black'):
 
         (x,y) = coord
-        self.item = canvas.create_oval(x-10, y-10, x+10, y+10, 
-                                outline=color, fill=color, tags="token")
+        self.item = canvas.create_oval(x-10, y-10, x+1, y+1, 
+                                outline=color, fill=color)
+        self.text = canvas.create_text(x+0, y-15, text=repeater)
         self.repeater = repeater
         self.canvas = canvas
         self.table = table
@@ -430,6 +445,7 @@ class Point:
         delta_y = event.y - self._drag_data["y"]
         # move the object the appropriate amount
         self.canvas.move(self._drag_data["item"], delta_x, delta_y)
+        self.canvas.move(self.text, delta_x, delta_y)
         # record the new position
         self._drag_data["x"] = event.x
         self._drag_data["y"] = event.y
