@@ -308,8 +308,8 @@ class GuiPart:
         self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
 
         for item in self.table:
-            print item
-            Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'])
+            if item['coordx'] != None and item['coordy'] != None:
+                Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'])
 
 
 
