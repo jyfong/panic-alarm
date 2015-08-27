@@ -14,12 +14,13 @@ import dataset
 import winsound
 import time
 import tkSimpleDialog
+import customtkSimpleDialog
 
 state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
 db = dataset.connect('sqlite:///mydatabase.db')
 
-class LoginDialog(tkSimpleDialog.Dialog):
+class LoginDialog(customtkSimpleDialog.Dialog):
 
     def body(self, master):
 
