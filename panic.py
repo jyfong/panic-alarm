@@ -19,6 +19,24 @@ state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
 db = dataset.connect('sqlite:///mydatabase.db')
 
+class ResizingCanvas(Canvas):
+    def __init__(self,parent,**kwargs):
+        Canvas.__init__(self,parent,**kwargs)
+        self.bind("<Configure>", self.on_resize)
+        self.height = self.winfo_reqheight()
+        self.width = self.winfo_reqwidth()
+
+    def on_resize(self,event):
+        # determine the ratio of old width/height to new width/height
+        wscale = float(event.width)/self.width
+        hscale = float(event.height)/self.height
+        self.width = event.width
+        self.height = event.height
+        # resize the canvas 
+        self.config(width=self.width, height=self.height)
+        # rescale all the objects tagged with the "all" tag
+        # self.scale("all",0,0,wscale,hscale)
+
 class GuiPart:
     def __init__(self, master, queue, endCommand, send):
         self.master = master
@@ -38,31 +56,76 @@ class GuiPart:
         master.title("DF Panic Alarm")
         master.geometry(self.initPosition)
 
-
         # create a toplevel menu
         menubar = Menu(master)
         filemenu = Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Clear DB", command=self.clearDatabase)
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=endCommand)
+        menubar.add_cascade(label="File", menu=filemenu)
+
+        manageMenu = Menu(menubar, tearoff=0)
+        manageMenu.add_command(label="Configure",command=lambda:self.addDevices(master))
+        manageMenu.add_command(label="Add User")
+        menubar.add_cascade(label="Manage" ,menu=manageMenu )
+
+        # display the menu
+        master.config(menu=menubar)
+
+        master.protocol('WM_DELETE_WINDOW', self.on_exit)
+
+        # Paned window
+        paned = PanedWindow(master, orient=HORIZONTAL, showhandle=0, handlepad=0, 
+            handlesize=0, sashwidth=5, opaqueresize=1, bg="grey")
+        paned.pack(side=LEFT, expand=YES, fill=BOTH)
+        leftFrame = Frame(paned, border=0)
+        rightFrame = Frame(paned)
+        paned.add(leftFrame,minsize=16)
+        paned.add(rightFrame,minsize=16)
+
+        # Listbox for details
+        mlb = MultiListbox(leftFrame, (('Subject', 40), ('Sender', 20), ('Date', 10)))
+        for i in range(1000):
+            mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
+        mlb.pack(expand=YES,fill=BOTH)
+
+        # Uneditable Map
+        self.guardcanvas = ResizingCanvas(rightFrame,width=100, height=400, bg="grey")
+        self.guardcanvas.pack()
+
+        row = self.tableImage.all().next()
+        self.openImage(row["imageName"],self.guardcanvas)
+
+        for item in self.table:
+            if item['coordx'] != None and item['coordy'] != None:
+                Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
+
+    def addDevices(self,master):
+
+        addDevicesWindow = Toplevel(self.master)
+
+        # Menubar for addDevices window
+        menubar = Menu(addDevicesWindow)
+        filemenu = Menu(menubar, tearoff=0)
+        filemenu.add_command(label="Clear DB", command=self.clearDatabase)
+        filemenu.add_separator()
         menubar.add_cascade(label="File", menu=filemenu)
         centralMenu = Menu(menubar, tearoff=0)
         centralMenu.add_command(label="MCU Reset", command=self.mcuReset )
         centralMenu.add_command(label="Check MCU ID", command=self.mcuIDChecking)
         menubar.add_cascade(label="Central Menu" ,menu=centralMenu )
 
-        # display the menu
-        master.config(menu=menubar)
+        addDevicesWindow.config(menu=menubar)
 
-        # Init a frame for whole window
-        topFrame = LabelFrame(master, text="Configure", padx= 5 , pady= 5)
+        topFrame = LabelFrame(addDevicesWindow, text="Configure", padx= 5 , pady= 5)
         topFrame.pack(side=TOP,fill=BOTH, expand=1)
-        middleFrame = LabelFrame(master , text="Devices", padx= 5 , pady= 5)
+        middleFrame = LabelFrame(addDevicesWindow , text="Devices", padx= 5 , pady= 5)
         middleFrame.pack(side=LEFT,fill=BOTH, expand=1)
-        middleFrameRight = LabelFrame(master , text="Information", padx= 10 , pady= 10)
+        middleFrameRight = LabelFrame(addDevicesWindow , text="Information", padx= 10 , pady= 10)
         middleFrameRight.pack(side=LEFT,fill=BOTH, expand=1)
-        bottomFrame = LabelFrame(master,text="Event Log", padx= 5 , pady= 5 )
-        bottomFrame.pack(side=BOTTOM,fill=BOTH, expand=1)
+        bottomFrame = LabelFrame(addDevicesWindow,text="Event Log", padx= 5 , pady= 5 )
+        bottomFrame.pack(side=BOTTOM,fill=BOTH, expand=1)    
+        # Init a frame for whole window
+        
 
 
         # Top Frame Buttons
@@ -275,9 +338,10 @@ class GuiPart:
         mapWindowTop.pack(side=TOP)
         mapWindowBottom = Frame(mapWindow)
         mapWindowBottom.pack()
+        # mapWindowBottom.bind('<Configure>', self.resizeImage)
 
-        self.canvas = Canvas(mapWindowBottom, width=mapWindow.winfo_screenwidth()-4, height=mapWindow.winfo_screenheight()-4)
-        self.canvas.pack()
+        self.admincanvas = Canvas(mapWindowBottom, width=mapWindow.winfo_screenwidth()-4, height=mapWindow.winfo_screenheight()-4)
+        self.admincanvas.pack()
 
         # Buttons for map window
         buttonwidth = 20
@@ -287,18 +351,30 @@ class GuiPart:
         # b2.grid(row=0,column=1, sticky=W)
 
         row = self.tableImage.all().next()
-        self.openImage(row["imageName"])
+        self.openImage(row["imageName"],self.admincanvas)
 
         for item in self.table:
             if item['coordx'] != None and item['coordy'] != None:
-                Point(self.table, self.canvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
+                Point(self.table, self.admincanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
 
-    def openImage(self,filename):
-        im = Image.open(filename)
+    # def resizeImage(self,event):
+    #     new_width = event.width
+    #     new_height = event.height
+
+    #     self.image = self.img_copy.resize((new_width, new_height))
+
+    #     self.canvas.image = ImageTk.PhotoImage(self.image)
+    #     self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
+
+    def openImage(self,filename,canvas):
+        self.image = Image.open(filename)
+        # self.img_copy= self.image.copy()
+        # size = (self.mapWindow.winfo_screenwidth(), self.mapWindow.winfo_screenheight())
+        # self.resizedImage = self.image.resize(size,Image.ANTIALIAS)
         # Put the image into a canvas compatible class, and stick in an
         # arbitrary variable to the garbage collector doesn't destroy it
-        self.canvas.image = ImageTk.PhotoImage(im)
-        self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
+        canvas.image = ImageTk.PhotoImage(self.image)
+        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def uploadImage(self):
         filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
@@ -314,15 +390,19 @@ class GuiPart:
             self.mapWindow.attributes('-fullscreen', True)
             state = 0
 
+    def sos(self): 
+        for i in range(0, 3): winsound.Beep(2000, 100) 
+        for i in range(0, 3): winsound.Beep(2000, 400) 
+        for i in range(0, 3): winsound.Beep(2000, 100)
+
     def panicAlarm(self,msg):
         cmd, repeater = msg
+        self.sos()
         tkMessageBox.showwarning(
             "!!!!!PANIC!!!!!",
             "Panic Alarm from \n(%s)" % repeater
         )
-        Freq = 2500 # Set Frequency To 2500 Hertz
-        Dur = 500 # Set Duration To 1000 ms == 1 second
-        winsound.Beep(Freq,Dur)
+        
 
     def decode(self,b):
 
@@ -399,6 +479,93 @@ class GuiPart:
                     self.decode(msg)
             except Queue.Empty:
                 pass
+
+class MultiListbox(Frame):
+    def __init__(self, master, lists):
+        Frame.__init__(self, master)
+        self.lists = []
+        for l,w in lists:
+            frame = Frame(self); frame.pack(side=LEFT, expand=YES, fill=BOTH)
+            Label(frame, text=l, borderwidth=1, relief=RAISED).pack(fill=X)
+            lb = Listbox(frame, width=w, borderwidth=0, selectborderwidth=0,
+                 relief=FLAT, exportselection=FALSE)
+            lb.pack(expand=YES, fill=BOTH)
+            self.lists.append(lb)
+            lb.bind('<B1-Motion>', lambda e, s=self: s._select(e.y))
+            lb.bind('<Button-1>', lambda e, s=self: s._select(e.y))
+            lb.bind('<Leave>', lambda e: 'break')
+            lb.bind('<B2-Motion>', lambda e, s=self: s._b2motion(e.x, e.y))
+            lb.bind('<Button-2>', lambda e, s=self: s._button2(e.x, e.y))
+        frame = Frame(self); frame.pack(side=LEFT, fill=Y)
+        Label(frame, borderwidth=1, relief=RAISED).pack(fill=X)
+        sb = Scrollbar(frame, orient=VERTICAL, command=self._scroll)
+        sb.pack(expand=YES, fill=Y)
+        self.lists[0]['yscrollcommand']=sb.set
+
+    def _select(self, y):
+        row = self.lists[0].nearest(y)
+        self.selection_clear(0, END)
+        self.selection_set(row)
+        return 'break'
+
+    def _button2(self, x, y):
+        for l in self.lists: l.scan_mark(x, y)
+        return 'break'
+
+    def _b2motion(self, x, y):
+        for l in self.lists: l.scan_dragto(x, y)
+        return 'break'
+
+    def _scroll(self, *args):
+        for l in self.lists:
+            apply(l.yview, args)
+
+    def curselection(self):
+        return self.lists[0].curselection()
+
+    def delete(self, first, last=None):
+        for l in self.lists:
+            l.delete(first, last)
+
+    def get(self, first, last=None):
+        result = []
+        for l in self.lists:
+            result.append(l.get(first,last))
+        if last: return apply(map, [None] + result)
+        return result
+        
+    def index(self, index):
+        self.lists[0].index(index)
+
+    def insert(self, index, *elements):
+        for e in elements:
+            i = 0
+            for l in self.lists:
+                l.insert(index, e[i])
+                i = i + 1
+
+    def size(self):
+        return self.lists[0].size()
+
+    def see(self, index):
+        for l in self.lists:
+            l.see(index)
+
+    def selection_anchor(self, index):
+        for l in self.lists:
+            l.selection_anchor(index)
+
+    def selection_clear(self, first, last=None):
+        for l in self.lists:
+            l.selection_clear(first, last)
+
+    def selection_includes(self, index):
+        return self.lists[0].selection_includes(index)
+
+    def selection_set(self, first, last=None):
+        for l in self.lists:
+            l.selection_set(first, last)
+
 
 class Point:
     def __init__(self, table, canvas, coord, repeater,name, color='black'):
