@@ -49,10 +49,9 @@ class GuiPart:
         self.tableImage = db['image']
         self.tableLog = db['log']
         self.initPosition = "+300+30"
-
+        self.logger("Program startup properly..\n")
 
         # Set up the GUI
-
         master.title("DF Panic Alarm")
         master.geometry(self.initPosition)
 
@@ -60,7 +59,7 @@ class GuiPart:
         menubar = Menu(master)
         filemenu = Menu(menubar, tearoff=0)
         filemenu.add_separator()
-        filemenu.add_command(label="Exit", command=endCommand)
+        filemenu.add_command(label="Exit", command=self.on_exit)
         menubar.add_cascade(label="File", menu=filemenu)
 
         manageMenu = Menu(menubar, tearoff=0)
@@ -89,7 +88,7 @@ class GuiPart:
         mlb.pack(expand=YES,fill=BOTH)
 
         # Uneditable Map
-        self.guardcanvas = ResizingCanvas(rightFrame,width=100, height=400, bg="grey")
+        self.guardcanvas = ResizingCanvas(rightFrame,width=100, height=400, bg="grey",highlightthickness=0)
         self.guardcanvas.pack()
 
         row = self.tableImage.all().next()
@@ -226,7 +225,8 @@ class GuiPart:
         now = time.localtime()
         msg = time.strftime("%y/%m/%d %H:%M", now) + " " +  msg
         timeinsec = time.time()
-        self.log.insert(END, msg)
+        if 'self.log' in dir(self):
+            self.log.insert(END, msg)
         self.tableLog.insert(dict(time=timeinsec,msg=msg))
 
     def clearLogger(self):
@@ -295,8 +295,10 @@ class GuiPart:
     def on_exit(self):
         """When you click to exit, this function is called"""
         if tkMessageBox.askyesno("Exit", "Do you want to quit the application?"):
+            self.logger("Program shutdown properly..\n")
             root.destroy()
             self.endCommand()
+            
 
     ####                 ###
     ####   Log Window    ###
