@@ -197,8 +197,7 @@ class GuiPart:
 
         master.protocol('WM_DELETE_WINDOW', self.on_exit)
         # master.resizable(0,0)
-
-
+        
         for repeater in self.table:
             self.l1.insert(END, repeater['repeater'])
         self.l1.select_set(0)
@@ -225,7 +224,7 @@ class GuiPart:
         now = time.localtime()
         msg = time.strftime("%y/%m/%d %H:%M", now) + " " +  msg
         timeinsec = time.time()
-        if 'self.log' in dir(self):
+        if 'log' in dir(self):
             self.log.insert(END, msg)
         self.tableLog.insert(dict(time=timeinsec,msg=msg))
 
