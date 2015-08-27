@@ -112,7 +112,7 @@ class GuiPart:
         mlb.pack(expand=YES,fill=BOTH)
 
         # Uneditable Map
-        self.guardcanvas = ResizingCanvas(rightFrame,width=100, height=400, bg="grey",highlightthickness=0)
+        self.guardcanvas = ResizingCanvas(rightFrame,width=400, height=400, bg="grey")
         self.guardcanvas.pack()
 
         row = self.tableImage.all().next()
@@ -122,11 +122,14 @@ class GuiPart:
             if item['coordx'] != None and item['coordy'] != None:
                 Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
 
+
     def addUsers(self,master):
         d = LoginDialog(master)
         if d.result == 1:
             print "login successful"
-
+            self.addDevices(master)
+        else:
+            print "login failed"
 
 
     def addDevices(self,master):
@@ -514,9 +517,15 @@ class MultiListbox(Frame):
     def __init__(self, master, lists):
         Frame.__init__(self, master)
         self.lists = []
+        self.colmapping={}
+        self.origData = None
         for l,w in lists:
             frame = Frame(self); frame.pack(side=LEFT, expand=YES, fill=BOTH)
-            Label(frame, text=l, borderwidth=1, relief=RAISED).pack(fill=X)
+            b = Button(frame, text=l, borderwidth=1, relief=RAISED)
+            b.pack(fill=X)
+            b.bind('<Button-1>', self._sort)
+            self.colmapping[b]=(len(self.lists),1)
+            # Label(frame, text=l, borderwidth=1, relief=RAISED).pack(fill=X)
             lb = Listbox(frame, width=w, borderwidth=0, selectborderwidth=0,
                  relief=FLAT, exportselection=FALSE)
             lb.pack(expand=YES, fill=BOTH)
@@ -595,6 +604,46 @@ class MultiListbox(Frame):
     def selection_set(self, first, last=None):
         for l in self.lists:
             l.selection_set(first, last)
+
+    def _sort(self, e):
+        # get the listbox to sort by (mapped by the header button)
+        b=e.widget
+        col, direction = self.colmapping[b]
+ 
+        # get the entire table data into mem
+        tableData = self.get(0,END)
+        if self.origData == None:
+            import copy
+            self.origData = copy.deepcopy(tableData)
+             
+        rowcount = len(tableData)
+         
+         #remove old sort indicators if it exists
+        for btn in self.colmapping:
+            lab = btn.cget('text')
+            if lab[0]=='[': btn.config(text=lab[4:])
+                 
+        btnLabel = b.cget('text')
+        #sort data based on direction
+        if direction==0:
+            tableData = self.origData
+        else:
+            if direction==1: b.config(text='[+] ' + btnLabel) 
+            else: b.config(text='[-] ' + btnLabel)
+            # sort by col
+            tableData.sort(key=lambda x: x[col], reverse=direction<0)
+ 
+        #clear widget
+        self.delete(0,END)
+         
+        # refill widget
+        for row in range(rowcount):
+             self.insert(END, tableData[row])
+  
+        # toggle direction flag 
+        if direction==1: direction=-1
+        else: direction += 1
+        self.colmapping[b] = (col, direction)
 
 
 class Point:
