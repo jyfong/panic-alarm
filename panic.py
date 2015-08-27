@@ -19,6 +19,29 @@ state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
 db = dataset.connect('sqlite:///mydatabase.db')
 
+class LoginDialog(tkSimpleDialog.Dialog):
+
+    def body(self, master):
+
+        Label(master, text="Username:").grid(row=0)
+        Label(master, text="Password:").grid(row=1)
+
+        self.e1 = Entry(master)
+        self.e2 = Entry(master)
+
+        self.e1.grid(row=0, column=1)
+        self.e2.grid(row=1, column=1)
+        return self.e1 # initial focus
+
+    def apply(self):
+        first = int(self.e1.get())
+        second = int(self.e2.get())
+        # check id password from db currently fake it
+        # 
+        self.result = 1
+        
+
+
 class ResizingCanvas(Canvas):
     def __init__(self,parent,**kwargs):
         Canvas.__init__(self,parent,**kwargs)
@@ -64,7 +87,7 @@ class GuiPart:
 
         manageMenu = Menu(menubar, tearoff=0)
         manageMenu.add_command(label="Configure",command=lambda:self.addDevices(master))
-        manageMenu.add_command(label="Add User")
+        manageMenu.add_command(label="Add User", command=lambda:self.addUsers(master))
         menubar.add_cascade(label="Manage" ,menu=manageMenu )
 
         # display the menu
@@ -98,10 +121,15 @@ class GuiPart:
             if item['coordx'] != None and item['coordy'] != None:
                 Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
 
+    def addUsers(self,master):
+        d = LoginDialog(master)
+        if d.result == 1:
+            print "login successful"
+
+
+
     def addDevices(self,master):
-
         addDevicesWindow = Toplevel(self.master)
-
         # Menubar for addDevices window
         menubar = Menu(addDevicesWindow)
         filemenu = Menu(menubar, tearoff=0)
