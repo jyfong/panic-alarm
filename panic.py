@@ -108,21 +108,57 @@ class GuiPart:
         paned.add(rightFrame,minsize=16)
 
         # Listbox for details
-        mlb = multiListBox.MultiListbox(leftFrame, (('Subject', 40), ('Sender', 20), ('Date', 10)))
-        for i in range(1000):
-            mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
+        mlb = multiListBox.MultiListbox(leftFrame, (('RepeaterID', 15), ('Name', 20), ('Address', 30)))
+        # for i in range(1000):
+        #     mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
         mlb.pack(expand=YES,fill=BOTH)
 
         # Uneditable Map
         self.guardcanvas = ResizingCanvas(rightFrame,width=400, height=400, bg="grey")
         self.guardcanvas.pack()
+        self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.guardcanvas.bind_all("<ButtonPress-1>", self._on_press)
 
         row = self.tableImage.all().next()
         self.openImage(row["imageName"],self.guardcanvas)
 
         for item in self.table:
+            mlb.insert(END, (item['repeater'], item['name'], item['address']))
             if item['coordx'] != None and item['coordy'] != None:
                 Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
+
+        self.x_error = 0
+        self.y_error = 0
+
+    def _on_press(self, event):
+        print 'click:', event.x, event.y
+
+    def _on_mousewheel(self, event):
+        scale = 1 + (0.10 *(event.delta/120))
+
+        w, h = self.image.size
+        
+        self.resizeImage(self.guardcanvas, round(w*scale), round(h*scale))
+        self.guardcanvas.tag_raise("house")
+
+        sw, sh = round(w*scale) / w, round(h*scale) / h
+        self.transformPoint("2", sw, sh)
+        self.transformPoint("4", sw, sh)
+        # self.tranformPoint("3", (v+w) / float(w))
+
+    
+    def transformPoint(self, item, scalex, scaley):
+        a, b, c, d = self.guardcanvas.coords(item)
+        x, y = a+5, b+5
+        mx, my = a*scalex-a, b*scaley-b
+        self.x_error += mx - round(mx)
+        self.y_error += my - round(my)
+        import math
+        self.guardcanvas.move(item, int(round(mx) + math.modf(self.x_error)[1]), int(round(my) + math.modf(self.y_error)[1]))
+        self.guardcanvas.coords(item, )
+        # print round(mx) + math.modf(self.x_error)[1]
+        self.x_error = math.modf(self.x_error)[0]
+        self.y_error = math.modf(self.y_error)[0]
 
 
     def addUsers(self,master):
@@ -392,18 +428,16 @@ class GuiPart:
             if item['coordx'] != None and item['coordy'] != None:
                 Point(self.table, self.admincanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
 
-    # def resizeImage(self,event):
-    #     new_width = event.width
-    #     new_height = event.height
+    def resizeImage(self, canvas, new_width, new_height):
+        print 'image:', new_width, new_height
+        self.image = self.img_copy.resize((new_width, new_height))
 
-    #     self.image = self.img_copy.resize((new_width, new_height))
-
-    #     self.canvas.image = ImageTk.PhotoImage(self.image)
-    #     self.canvas.create_image(0, 0, image=self.canvas.image, anchor='nw')
+        canvas.image = ImageTk.PhotoImage(self.image)
+        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def openImage(self,filename,canvas):
         self.image = Image.open(filename)
-        # self.img_copy= self.image.copy()
+        self.img_copy= self.image.copy()
         # size = (self.mapWindow.winfo_screenwidth(), self.mapWindow.winfo_screenheight())
         # self.resizedImage = self.image.resize(size,Image.ANTIALIAS)
         # Put the image into a canvas compatible class, and stick in an
@@ -519,8 +553,8 @@ class Point:
     def __init__(self, table, canvas, coord, repeater,name, color='black'):
 
         (x,y) = coord
-        self.item = canvas.create_oval(x-10, y-10, x+1, y+1, 
-                                outline=color, fill=color)
+        self.item = canvas.create_oval(x-5, y-5, x+5, y+5,
+                                outline=color, fill=color, tags="house")
         self.text = canvas.create_text(x+0, y-15, text=repeater)
         self.repeater = repeater
         self.canvas = canvas
@@ -538,6 +572,7 @@ class Point:
     def OnTokenButtonPress(self, event):
         '''Being drag of an object'''
         # record the item and its location
+        print event.x, event.y
         self._drag_data["item"] = self.canvas.find_closest(event.x, event.y)[0]
         self._drag_data["x"] = event.x
         self._drag_data["y"] = event.y
