@@ -15,6 +15,7 @@ import winsound
 import time
 import tkSimpleDialog
 import customtkSimpleDialog
+import admin
 
 state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
@@ -124,10 +125,10 @@ class GuiPart:
 
 
     def addUsers(self,master):
-        d = LoginDialog(master)
-        if d.result == 1:
+        login = LoginDialog(master)
+        if login.result == 1:
             print "login successful"
-            self.addDevices(master)
+            adminPage = admin.AdminPage(master)
         else:
             print "login failed"
 
@@ -362,7 +363,7 @@ class GuiPart:
         
         mapWindow = Toplevel(self.master)
         self.mapWindow = mapWindow
-        mapWindow.attributes('-fullscreen', True)
+        mapWindow.attributes('-fullscreen', False)
         mapWindow.geometry(self.initPosition)
         mapWindow.bind('<Escape>',self.toggleFullScreen)
 
