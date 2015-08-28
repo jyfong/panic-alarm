@@ -43,7 +43,22 @@ class LoginDialog(customtkSimpleDialog.Dialog):
         # 
         self.result = 1
         
+class PanicDialog(customtkSimpleDialog.Dialog):
 
+    def body(self,master):
+
+        self.topFrame = LabelFrame(master, text="Pending Panic Alarm", padx = 10 , pady = 10)
+        self.topFrame.grid(row=0, sticky=N+S+E+W)
+        self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
+        self.btmFrame.grid(row=1, sticky=N+S+E+W)
+
+        mlb = multiListBox.MultiListbox(self.topFrame, (('Subject', 40), ('Sender', 20), ('Date', 10)))
+        for i in range(1000):
+            mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
+        mlb.grid(row=0, sticky=N+S+E+W)
+
+        self.button_1 = Button(self.btmFrame,text="Add" )
+        self.button_1.grid(row=0,column=0, sticky=N+S+E+W)
 
 class ResizingCanvas(Canvas):
     def __init__(self,parent,**kwargs):
@@ -162,6 +177,7 @@ class GuiPart:
 
 
     def addUsers(self,master):
+        panic = PanicDialog(master)
         login = LoginDialog(master)
         if login.result == 1:
             print "login successful"
