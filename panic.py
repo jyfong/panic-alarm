@@ -73,6 +73,9 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.button_1 = Button(self.btmFrame,text="Add" )
         self.button_1.grid(row=0,column=0, sticky=N+S+E+W)
 
+    def canceled(self):
+        pass
+
 class ResizingCanvas(Canvas):
     def __init__(self,parent,**kwargs):
         Canvas.__init__(self,parent,**kwargs)
@@ -108,7 +111,7 @@ class GuiPart:
 
         # Add default admin user and password
         if self.tableUsers.count() == 0:
-            self.tableUsers.insert(dict(username="admin",password="admin",role="admin"))
+            self.tableUsers.insert(dict(username="admin",password="admin",role=""))
 
         # Set up the GUI
         master.title("DF Panic Alarm")
@@ -149,8 +152,8 @@ class GuiPart:
         # Uneditable Map
         self.guardcanvas = ResizingCanvas(rightFrame,width=400, height=400, bg="grey")
         self.guardcanvas.pack()
-        self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
-        self.guardcanvas.bind_all("<ButtonPress-1>", self._on_press)
+        self.guardcanvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.guardcanvas.bind("<ButtonPress-1>", self._on_press)
 
 
         if self.tableImage.count() != 0:
@@ -236,25 +239,28 @@ class GuiPart:
 
         # Top Frame Buttons
         buttonwidth = 20
+        b0 = Button(topFrame,text="Listen Mode" ,command=self.listenMode , width=buttonwidth)
+        b0.grid(row=0,column=0, sticky=W)
         b1 = Button(topFrame,text="Configure Central ID" ,command=self.configCentralId , width=buttonwidth)
-        b1.grid(row=0,column=0, sticky=W)
+        b1.grid(row=0,column=1, sticky=W)
         b2 = Button(topFrame,text="Ask Respond", command=self.askRespond , width=buttonwidth )
-        b2.grid(row=0,column=1, sticky=W)
+        b2.grid(row=0,column=2, sticky=W)
         b3 = Button(topFrame,text="Repeater Search Path", command=self.repeaterSearchPath , width=buttonwidth)
-        b3.grid(row=0,column=2, sticky=W)
+        b3.grid(row=0,column=3, sticky=W)
         b4 = Button(topFrame,text="All Repeater Search Path", command=self.allRepeaterSearchPath, width=buttonwidth )
-        b4.grid(row=0,column=3, sticky=W)
-        b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking, width=buttonwidth )
-        b5.grid(row=0,column=4, sticky=W)
+        b4.grid(row=0,column=4, sticky=W)
+        
         # Second Row
+        b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking, width=buttonwidth )
+        b5.grid(row=1,column=0, sticky=W)
         b6 = Button(topFrame,text="Check Repeater Central ID", command=self.repeaterCheckCentralID , width=buttonwidth)
-        b6.grid(row=1,column=0, sticky=W)
+        b6.grid(row=1,column=1, sticky=W)
         b7 = Button(topFrame,text="Check Repeater Path", command=self.repeaterCheckPath , width=buttonwidth)
-        b7.grid(row=1,column=1, sticky=W)
+        b7.grid(row=1,column=2, sticky=W)
         b8 = Button(topFrame,text="Map", command=self.openMap , width=buttonwidth)
-        b8.grid(row=1,column=2, sticky=W)
+        b8.grid(row=1,column=3, sticky=W)
         b9 = Button(topFrame,text="View Old Logs", command=self.openLog , width=buttonwidth)
-        b9.grid(row=1,column=3, sticky=W)
+        b9.grid(row=1,column=4, sticky=W)
 
         #Initialize variables for UI
         listbox_width = 40
@@ -307,6 +313,9 @@ class GuiPart:
         for repeater in self.table:
             self.l1.insert(END, repeater['repeater'])
         self.l1.select_set(0)
+
+    def listenMode(self):
+        pass
 
     def closeAddDevices(self):
         del self.log
@@ -506,14 +515,10 @@ class GuiPart:
         for i in range(0, 3): winsound.Beep(2000, 100)
 
     def panicAlarm(self,msg):
+        master = self.master
+        self.sos()
         panic = PanicDialog(master)
         cmd, repeater = msg
-        self.sos()
-        tkMessageBox.showwarning(
-            "!!!!!PANIC!!!!!",
-            "Panic Alarm from \n(%s)" % repeater
-        )
-        
 
     def decode(self,b):
 
