@@ -314,8 +314,10 @@ class GuiPart:
             self.l1.insert(END, repeater['repeater'])
         self.l1.select_set(0)
 
+        self.listen = False
+
     def listenMode(self):
-        pass
+        self.listen = not self.listen
 
     def closeAddDevices(self):
         del self.log
@@ -530,15 +532,23 @@ class GuiPart:
             repeater = m.group(2)
             RSSI = m.group(3)
 
+            
+            if cmd == "I":
+                if self.listen == True:
+
+                    msg = "Central ID = " + repeater + "\n"
+                    self.logger(msg)
+                    if not self.table.find_one(repeater=repeater):
+                        self.l1.insert(END, repeater)
+                        self.table.insert(dict(repeater=repeater))
+
+            if not self.table.find_one(repeater=repeater):
+                print "Alien Discovered", repeater
+                return
+
             if cmd == 'A':
                 msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
                 self.logger(msg)
-            elif cmd == "I":
-                msg = "Central ID = " + repeater + "\n"
-                self.logger(msg)
-                if not self.table.find_one(repeater=repeater):
-                    self.l1.insert(END, repeater)
-                    self.table.insert(dict(repeater=repeater))
             elif cmd == "E":
                 msg = "Repeater with ID = " + repeater + " has responded..\n"
                 self.logger(msg)
