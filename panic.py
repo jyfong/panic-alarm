@@ -59,18 +59,22 @@ class LoginDialog(customtkSimpleDialog.Dialog):
 class PanicDialog(customtkSimpleDialog.Dialog):
 
     def body(self,master):
-
+        self.tablePanic = db['panic']
         self.topFrame = LabelFrame(master, text="Pending Panic Alarm", padx = 10 , pady = 10)
         self.topFrame.grid(row=0, sticky=N+S+E+W)
         self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
         self.btmFrame.grid(row=1, sticky=N+S+E+W)
 
-        mlb = multiListBox.MultiListbox(self.topFrame, (('Subject', 40), ('Sender', 20), ('Date', 10)))
-        for i in range(1000):
-            mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
+        mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20), ('Phone', 20), ('Address', 30)))
         mlb.grid(row=0, sticky=N+S+E+W)
 
-        self.button_1 = Button(self.btmFrame,text="Add" )
+        pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater')
+
+        for item in pendingPanic:
+            currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
+            mlb.insert(END,(currentTime,item['name'],item['phone'],item['address']))
+
+        self.button_1 = Button(self.btmFrame,text="Acknowledge" )
         self.button_1.grid(row=0,column=0, sticky=N+S+E+W)
 
     def canceled(self):
@@ -106,6 +110,7 @@ class GuiPart:
         self.tableImage = db['image']
         self.tableLog = db['log']
         self.tableUsers = db['users']
+        self.tablePanic = db['panic']
         self.initPosition = "+300+30"
         self.logger("Program startup properly..\n")
 
@@ -124,10 +129,16 @@ class GuiPart:
         filemenu.add_command(label="Exit", command=self.on_exit)
         menubar.add_cascade(label="File", menu=filemenu)
 
+        # manage
         manageMenu = Menu(menubar, tearoff=0)
         manageMenu.add_command(label="Devices",command=lambda:self.addDevices(master))
         manageMenu.add_command(label="Users", command=lambda:self.addUsers(master))
         menubar.add_cascade(label="Manage" ,menu=manageMenu )
+
+        # view 
+        viewMenu = Menu(menubar, tearoff=0)
+        viewMenu.add_command(label="Pending Alarms",command=lambda:PanicDialog(master))
+        menubar.add_cascade(label="View" ,menu=viewMenu )
 
         # display the menu
         master.config(menu=menubar)
@@ -516,9 +527,12 @@ class GuiPart:
 
     def panicAlarm(self,msg):
         master = self.master
+        cmd, repeater = msg
+        currentTime = time.time()
+        self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
         self.sos()
         panic = PanicDialog(master)
-        cmd, repeater = msg
+        
 
     def decode(self,b):
 
