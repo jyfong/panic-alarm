@@ -1,8 +1,13 @@
 from Tkinter import *
 import multiListBox
+import dataset
+import tkMessageBox
+
+db = dataset.connect('sqlite:///mydatabase.db')
 
 class AdminPage:
     def __init__(self, master):
+        self.tableUsers = db['users']
     	# GUI INITIALIZATION
         self.master = master
         self.adminWindow = Toplevel(self.master)
@@ -27,7 +32,7 @@ class AdminPage:
 
         self.entry_1 = Entry(self.leftFrameTop) # Name
         self.entry_2 = Entry(self.leftFrameTop, show="*") # Pass
-        self.entry_3 = Entry(self.leftFrameTop, show="*") # ID
+        self.entry_3 = Entry(self.leftFrameTop) # ID
 
         self.label_1.grid(row=0, sticky=E)
         self.label_2.grid(row=1, sticky=E)
@@ -36,17 +41,16 @@ class AdminPage:
         self.entry_2.grid(row=1, column=1)
         self.entry_3.grid(row=2, column=1)
 
-        self.button_1 = Button(self.leftFrameBtm,text="Add" )
+        self.button_1 = Button(self.leftFrameBtm,text="Add",command=self.addGuard )
         self.button_1.grid(row=0,column=0, sticky=E)
-        self.button_2 = Button(self.leftFrameBtm,text="Delete" )
+        self.button_2 = Button(self.leftFrameBtm,text="Delete",command=self.deleteGuard )
         self.button_2.grid(row=0,column=1, sticky=E)
-        self.button_3 = Button(self.leftFrameBtm,text="Update" )
+        self.button_3 = Button(self.leftFrameBtm,text="Update",command=self.updateGuard )
         self.button_3.grid(row=0,column=2, sticky=E)
 
         # RIGHT FRAME
-        mlb = multiListBox.MultiListbox(self.rightFrame, (('Subject', 40), ('Sender', 20), ('Date', 10)))
-        for i in range(1000):
-            mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
+        mlb = multiListBox.MultiListbox(self.rightFrame, (('Username', 20), ('Password', 20), ('User ID', 10)))
+
         mlb.pack(expand=YES,fill=BOTH)
 
         # BOTTOM FRAME
@@ -59,9 +63,9 @@ class AdminPage:
         self.label_5 = Label(self.btmFrameTop, text="New Pass:")
         self.label_6 = Label(self.btmFrameTop, text="Confirm Pass:")
 
-        self.entry_4 = Entry(self.btmFrameTop) # Name
-        self.entry_5 = Entry(self.btmFrameTop, show="*") # Pass
-        self.entry_6 = Entry(self.btmFrameTop, show="*") # ID
+        self.entry_4 = Entry(self.btmFrameTop, show="*") # Old
+        self.entry_5 = Entry(self.btmFrameTop, show="*") # new
+        self.entry_6 = Entry(self.btmFrameTop, show="*") # confirm
 
         self.label_4.grid(row=0, sticky=E)
         self.label_5.grid(row=1, sticky=E)
@@ -70,5 +74,37 @@ class AdminPage:
         self.entry_5.grid(row=1, column=1)
         self.entry_6.grid(row=2, column=1)
 
-        self.button_4 = Button(self.btmFrameBtm,text="Change Password" )
+        self.button_4 = Button(self.btmFrameBtm,text="Change Password", command=self.changeAdminPassword)
         self.button_4.grid(row=0,column=0, sticky=E)
+
+
+    def changeAdminPassword(self):
+        oldpass = str(self.entry_4.get())
+        rows = self.tableUsers.find_one(username="admin", password=oldpass)
+        
+        if rows is not None:
+            if self.entry_5.get()==self.entry_6.get():
+                newpass = str(self.entry_5.get())
+                self.tableUsers.update(dict(username="admin",password=newpass),['username'])
+                tkMessageBox.showinfo("Success", "Password Changed")
+                self.entry_4.delete(0,END)
+                self.entry_5.delete(0,END)
+                self.entry_6.delete(0,END)
+            else:
+                tkMessageBox.showwarning("Input Error","Different New Password")
+        else:
+            tkMessageBox.showwarning("Input Error","Wrong Old Password!")
+
+    def addGuard(self):
+        username = str(self.entry_1.get())
+        password = str(self.entry_2.get())
+        userid = str(self.entry_3.get())
+
+    def updateGuard(self):
+        pass
+
+    def deleteGuard(self):
+        pass
+
+    def loadGuard(self):
+        pass

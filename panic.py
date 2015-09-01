@@ -23,25 +23,38 @@ state = 0 # for toggling fullscreen in mapWindow
 db = dataset.connect('sqlite:///mydatabase.db')
 
 class LoginDialog(customtkSimpleDialog.Dialog):
+    
 
     def body(self, master):
+        self.tableUsers = db['users']
 
         Label(master, text="Username:").grid(row=0)
         Label(master, text="Password:").grid(row=1)
 
         self.e1 = Entry(master)
-        self.e2 = Entry(master)
+        self.e2 = Entry(master, show="*")
 
         self.e1.grid(row=0, column=1)
         self.e2.grid(row=1, column=1)
         return self.e1 # initial focus
 
     def apply(self):
-        first = int(self.e1.get())
-        second = int(self.e2.get())
-        # check id password from db currently fake it
-        # 
-        self.result = 1
+        username = str(self.e1.get())
+        password = str(self.e2.get())
+        
+        rows = self.tableUsers.find_one(username=username, password=password)
+
+        if rows is not None:
+            print "Login Success"
+            self.result = 1
+        else:
+            tkMessageBox.showwarning("Fail","Wrong Username or Password!")
+            print "Fail Login"
+            self.result = 0
+        
+
+    def canceled(self):
+        self.result = 0
         
 class PanicDialog(customtkSimpleDialog.Dialog):
 
@@ -89,8 +102,13 @@ class GuiPart:
         self.table = db['repeater']
         self.tableImage = db['image']
         self.tableLog = db['log']
+        self.tableUsers = db['users']
         self.initPosition = "+300+30"
         self.logger("Program startup properly..\n")
+
+        # Add default admin user and password
+        if self.tableUsers.count() == 0:
+            self.tableUsers.insert(dict(username="admin",password="admin"))
 
         # Set up the GUI
         master.title("DF Panic Alarm")
@@ -104,8 +122,8 @@ class GuiPart:
         menubar.add_cascade(label="File", menu=filemenu)
 
         manageMenu = Menu(menubar, tearoff=0)
-        manageMenu.add_command(label="Configure",command=lambda:self.addDevices(master))
-        manageMenu.add_command(label="Add User", command=lambda:self.addUsers(master))
+        manageMenu.add_command(label="Devices",command=lambda:self.addDevices(master))
+        manageMenu.add_command(label="Users", command=lambda:self.addUsers(master))
         menubar.add_cascade(label="Manage" ,menu=manageMenu )
 
         # display the menu
@@ -134,8 +152,10 @@ class GuiPart:
         self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self.guardcanvas.bind_all("<ButtonPress-1>", self._on_press)
 
-        row = self.tableImage.all().next()
-        self.openImage(row["imageName"],self.guardcanvas)
+
+        if self.tableImage.count() != 0:
+            row = self.tableImage.all().next()
+            self.openImage(row["imageName"],self.guardcanvas)
 
         for item in self.table:
             mlb.insert(END, (item['repeater'], item['name'], item['address']))
@@ -177,19 +197,20 @@ class GuiPart:
 
 
     def addUsers(self,master):
-        panic = PanicDialog(master)
         login = LoginDialog(master)
         if login.result == 1:
-            print "login successful"
             adminPage = admin.AdminPage(master)
-        else:
-            print "login failed"
 
 
     def addDevices(self,master):
-        addDevicesWindow = Toplevel(self.master)
+        login = LoginDialog(master)
+
+        if login.result == 0:
+            return
+
+        self.addDevicesWindow = Toplevel(self.master)
         # Menubar for addDevices window
-        menubar = Menu(addDevicesWindow)
+        menubar = Menu(self.addDevicesWindow)
         filemenu = Menu(menubar, tearoff=0)
         filemenu.add_command(label="Clear DB", command=self.clearDatabase)
         filemenu.add_separator()
@@ -199,15 +220,15 @@ class GuiPart:
         centralMenu.add_command(label="Check MCU ID", command=self.mcuIDChecking)
         menubar.add_cascade(label="Central Menu" ,menu=centralMenu )
 
-        addDevicesWindow.config(menu=menubar)
+        self.addDevicesWindow.config(menu=menubar)
 
-        topFrame = LabelFrame(addDevicesWindow, text="Configure", padx= 5 , pady= 5)
+        topFrame = LabelFrame(self.addDevicesWindow, text="Configure", padx= 5 , pady= 5)
         topFrame.pack(side=TOP,fill=BOTH, expand=1)
-        middleFrame = LabelFrame(addDevicesWindow , text="Devices", padx= 5 , pady= 5)
+        middleFrame = LabelFrame(self.addDevicesWindow , text="Devices", padx= 5 , pady= 5)
         middleFrame.pack(side=LEFT,fill=BOTH, expand=1)
-        middleFrameRight = LabelFrame(addDevicesWindow , text="Information", padx= 10 , pady= 10)
+        middleFrameRight = LabelFrame(self.addDevicesWindow , text="Information", padx= 10 , pady= 10)
         middleFrameRight.pack(side=LEFT,fill=BOTH, expand=1)
-        bottomFrame = LabelFrame(addDevicesWindow,text="Event Log", padx= 5 , pady= 5 )
+        bottomFrame = LabelFrame(self.addDevicesWindow,text="Event Log", padx= 5 , pady= 5 )
         bottomFrame.pack(side=BOTTOM,fill=BOTH, expand=1)    
         # Init a frame for whole window
         
@@ -281,12 +302,15 @@ class GuiPart:
         clearlog_button = Button(bottomFrame,text="Clear log", command=self.clearLogger )
         clearlog_button.grid(row=1,column=0, sticky=W)
 
-        master.protocol('WM_DELETE_WINDOW', self.on_exit)
-        # master.resizable(0,0)
-        
+        self.addDevicesWindow.protocol('WM_DELETE_WINDOW', self.closeAddDevices)
+
         for repeater in self.table:
             self.l1.insert(END, repeater['repeater'])
         self.l1.select_set(0)
+
+    def closeAddDevices(self):
+        del self.log
+        self.addDevicesWindow.destroy()
 
     def updateEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())
@@ -336,6 +360,7 @@ class GuiPart:
         self.logger(msg)
 
     def allRepeaterSearchPath(self):
+        del self.repeaterSearchPath
         self.send(b"ART00000000S000\r")
         self.logger("Asking all repeater to search path... Please wait for reply..\n")
 
@@ -463,7 +488,7 @@ class GuiPart:
 
     def uploadImage(self):
         filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
-        self.openImage(filename)
+        self.openImage(filename,self.admincanvas)
         self.tableImage.insert(dict(imageName=filename))
 
     def toggleFullScreen(self,event):
@@ -481,6 +506,7 @@ class GuiPart:
         for i in range(0, 3): winsound.Beep(2000, 100)
 
     def panicAlarm(self,msg):
+        panic = PanicDialog(master)
         cmd, repeater = msg
         self.sos()
         tkMessageBox.showwarning(

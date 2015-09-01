@@ -74,10 +74,15 @@ class Dialog(Toplevel):
 
         self.apply()
 
-        self.cancel()
+        self.closeWindow()
+
+    def closeWindow(self, event=None):
+        self.parent.focus_set()
+        self.destroy()
 
     def cancel(self, event=None):
 
+        self.canceled()
         # put focus back to the parent window
         self.parent.focus_set()
         self.destroy()
