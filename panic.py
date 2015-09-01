@@ -152,21 +152,23 @@ class GuiPart:
         # Uneditable Map
         self.guardcanvas = ResizingCanvas(rightFrame,width=400, height=400, bg="grey")
         self.guardcanvas.pack()
-        self.guardcanvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self.guardcanvas.bind("<ButtonPress-1>", self._on_press)
 
 
         if self.tableImage.count() != 0:
             row = self.tableImage.all().next()
             self.openImage(row["imageName"],self.guardcanvas)
+        self.houses = []
 
         for item in self.table:
             mlb.insert(END, (item['repeater'], item['name'], item['address']))
             if item['coordx'] != None and item['coordy'] != None:
-                Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
+                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name']))
 
         self.x_error = 0
         self.y_error = 0
+
 
     def _on_press(self, event):
         print 'click:', event.x, event.y
@@ -180,9 +182,10 @@ class GuiPart:
         self.guardcanvas.tag_raise("house")
 
         sw, sh = round(w*scale) / w, round(h*scale) / h
-        self.transformPoint("2", sw, sh)
-        self.transformPoint("4", sw, sh)
-        # self.tranformPoint("3", (v+w) / float(w))
+
+        for h in self.houses:
+            item = h.item
+            self.transformPoint(item, sw, sh)
 
     
     def transformPoint(self, item, scalex, scaley):
@@ -193,7 +196,6 @@ class GuiPart:
         self.y_error += my - round(my)
         import math
         self.guardcanvas.move(item, int(round(mx) + math.modf(self.x_error)[1]), int(round(my) + math.modf(self.y_error)[1]))
-        self.guardcanvas.coords(item, )
         # print round(mx) + math.modf(self.x_error)[1]
         self.x_error = math.modf(self.x_error)[0]
         self.y_error = math.modf(self.y_error)[0]
@@ -532,7 +534,7 @@ class GuiPart:
             repeater = m.group(2)
             RSSI = m.group(3)
 
-            
+
             if cmd == "I":
                 if self.listen == True:
 
