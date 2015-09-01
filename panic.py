@@ -108,7 +108,7 @@ class GuiPart:
 
         # Add default admin user and password
         if self.tableUsers.count() == 0:
-            self.tableUsers.insert(dict(username="admin",password="admin"))
+            self.tableUsers.insert(dict(username="admin",password="admin",role="admin"))
 
         # Set up the GUI
         master.title("DF Panic Alarm")
