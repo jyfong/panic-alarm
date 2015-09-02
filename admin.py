@@ -29,7 +29,7 @@ class AdminPage:
         scrollbar = Scrollbar(self.listboxFrame)
         self.l1 = Listbox(self.listboxFrame, width=listbox_width,yscrollcommand=scrollbar.set, exportselection=0, height=24)
         self.l1.grid(row=0,column=0)
-        # self.l1.bind("<<ListboxSelect>>", self.loadEntry)
+        self.l1.bind("<<ListboxSelect>>", self.loadEntry)
         scrollbar.grid(row=0,column=1,sticky=N+S)
         scrollbar.config( command = self.l1.yview)
 
@@ -93,10 +93,33 @@ class AdminPage:
 
         self.loadGuards()
 
+        nameLabel = Label(self.editlistboxFrame, text="Name")
+        nameLabel.grid(row=0, column=0)
+        self.nameVar = StringVar()
+        self.name = Entry(self.editlistboxFrame, textvariable=self.nameVar)
+        self.name.grid(row=1,column=0)
+        addressLabel = Label(self.editlistboxFrame, text="Address")
+        addressLabel.grid(row=2, column=0)
+        self.addressVar = StringVar()
+        self.address = Entry(self.editlistboxFrame, textvariable=self.addressVar)
+        self.address.grid(row=3,column=0)
+        phoneLabel = Label(self.editlistboxFrame, text="Phone")
+        phoneLabel.grid(row=4, column=0)
+        self.phoneVar = StringVar()
+        self.phone = Entry(self.editlistboxFrame, textvariable=self.phoneVar)
+        self.phone.grid(row=5,column=0)
+
+        b10 = Button(self.editlistboxFrame,text="Update", command=self.updateEntry , width=20)
+        b10.grid(row=6,column=0, sticky=W)
+        b11 = Button(self.editlistboxFrame,text="Delete", command=self.deleteEntry , width=20)
+        b11.grid(row=7,column=0, sticky=W)
+
+
+
         # repeaters = db.query('SELECT repeater.name,repeater.phone FROM repeater WHERE panic.repeater = repeater.repeater')
 
         for repeater in self.table:
-            self.l1.insert(END, repeater['repeater']+' '+repeater['name'])
+            self.l1.insert(END, repeater['repeater']+'/'+ repeater['name'])
         self.l1.select_set(0)
 
 
@@ -135,3 +158,21 @@ class AdminPage:
         users = self.tableUsers.find(role="guard")
         for item in users:
             self.mlb.insert(END,(item["username"],item["password"]))
+
+    def loadEntry(self, event):
+        repeaterID = self.l1.get(self.l1.curselection()).partition('/')[0]
+        row = self.table.find_one(repeater=repeaterID)
+        self.nameVar.set(row['name'])
+        self.addressVar.set(row['address'])
+        self.phoneVar.set(row['phone'])        
+
+    def updateEntry(self):
+        repeaterID = self.l1.get(self.l1.curselection()).partition('/')[0]
+        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(),address=self.addressVar.get(),phone=self.phoneVar.get(), coordx=100, coordy=100), ['repeater'] )
+
+    def deleteEntry(self):
+        repeaterID = self.l1.get(self.l1.curselection())
+        self.table.delete(repeater=repeaterID)
+        self.l1.delete(0,END)
+        for repeater in self.table:
+            self.l1.insert(END, repeater['repeater'])
