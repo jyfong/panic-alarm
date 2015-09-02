@@ -637,11 +637,7 @@ class GuiPart:
                 else:
                     return
 
-<<<<<<< HEAD
-            if not self.centralId == repeater or self.table.find_one(repeater=repeater):
-=======
             if not (self.centralId == repeater or self.table.find_one(repeater=repeater)):
->>>>>>> 2abfe23b29b8b51834d63204ae171afe2602f4a5
                 print "Alien Discovered", repeater
                 return
 
