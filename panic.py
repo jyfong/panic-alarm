@@ -217,6 +217,7 @@ class GuiPart:
         self.x_error = 0
         self.y_error = 0
         self.do_blink = False
+        self.centralId = "00000001"
 
 
     def _on_press(self, event):
@@ -626,7 +627,7 @@ class GuiPart:
                 else:
                     return
 
-            if not self.table.find_one(repeater=repeater):
+            if not self.centralId == repeater || self.table.find_one(repeater=repeater):
                 print "Alien Discovered", repeater
                 return
 
