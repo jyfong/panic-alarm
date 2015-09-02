@@ -168,6 +168,7 @@ class GuiPart:
 
         self.x_error = 0
         self.y_error = 0
+        self.do_blink = False
 
 
     def _on_press(self, event):
@@ -490,7 +491,7 @@ class GuiPart:
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def openImage(self,filename,canvas):
-        self.image = Image.open(filename)
+        self.image = Image.open("map.jpg")
         self.img_copy= self.image.copy()
         # size = (self.mapWindow.winfo_screenwidth(), self.mapWindow.winfo_screenheight())
         # self.resizedImage = self.image.resize(size,Image.ANTIALIAS)
@@ -523,6 +524,29 @@ class GuiPart:
         self.sos()
         panic = PanicDialog(master)
         cmd, repeater = msg
+
+    def findHouseByRepeater(self, repeater):
+        for h in self.houses:
+            if h.repeater == repeater:
+                return h.item
+
+        return -1
+
+
+    def start_blinking(self):
+        self.do_blink = True
+        
+
+    def stop_blinking(self):
+        self.do_blink = False
+
+    def blink(self, house):
+        canvas = self.guardcanvas
+        if self.do_blink:
+            current_color = canvas.itemcget(house, "fill")
+            new_color = "red" if current_color == "black" else "black"
+            canvas.itemconfigure(house, fill=new_color)
+            self.master.after(1000, lambda:self.blink(house))
 
     def decode(self,b):
 
@@ -579,6 +603,8 @@ class GuiPart:
                 self.queue.put((cmd,repeater))
                 msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
                 self.logger(msg)
+                self.start_blinking()
+                self.blink(self.findHouseByRepeater(repeater))
 
             elif int(cmd) in range(1,4):
                 msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
