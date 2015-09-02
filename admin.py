@@ -67,6 +67,7 @@ class AdminPage:
         self.mlb = multiListBox.MultiListbox(self.rightFrame, (('Username', 20), ('Password', 20)))
         self.mlb.pack(expand=YES,fill=BOTH)
 
+
         # BOTTOM FRAME
         self.btmFrameTop = Frame(self.btmFrame)
        	self.btmFrameBtm = Frame(self.btmFrame)
@@ -91,8 +92,6 @@ class AdminPage:
         self.button_4 = Button(self.btmFrameBtm,text="Change Password", command=self.changeAdminPassword)
         self.button_4.grid(row=0,column=0, sticky=E)
 
-        self.loadGuards()
-
         nameLabel = Label(self.editlistboxFrame, text="Name")
         nameLabel.grid(row=0, column=0)
         self.nameVar = StringVar()
@@ -114,9 +113,9 @@ class AdminPage:
         b11 = Button(self.editlistboxFrame,text="Delete", command=self.deleteEntry , width=20)
         b11.grid(row=7,column=0, sticky=W)
 
-
-
-        # repeaters = db.query('SELECT repeater.name,repeater.phone FROM repeater WHERE panic.repeater = repeater.repeater')
+        # load stuff
+        self.loadGuards()
+        self.mlb.selection_set(0)
 
         for repeater in self.table:
             self.l1.insert(END, repeater['repeater']+'/'+ repeater['name'])

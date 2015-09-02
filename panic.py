@@ -24,11 +24,13 @@ db = dataset.connect('sqlite:///mydatabase.db')
 
 
 do_blink = False
-def start_blinking(self):
+def start_blinking():
+    global do_blink
     do_blink = True
     
 
-def stop_blinking(self):
+def stop_blinking():
+    global do_blink
     do_blink = False
 
 class LoginDialog(customtkSimpleDialog.Dialog):
@@ -370,7 +372,7 @@ class GuiPart:
 
             for repeater in self.table:
                 self.l1.insert(END, repeater['repeater'])
-            self.l1.select_set(0)
+            self.l1.select_set(1)
 
             self.listen = False
         else:
@@ -557,7 +559,7 @@ class GuiPart:
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def openImage(self,filename,canvas):
-        self.image = Image.open("map.jpg")
+        self.image = Image.open(filename)
         self.img_copy= self.image.copy()
         # size = (self.mapWindow.winfo_screenwidth(), self.mapWindow.winfo_screenheight())
         # self.resizedImage = self.image.resize(size,Image.ANTIALIAS)
@@ -567,6 +569,8 @@ class GuiPart:
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def uploadImage(self):
+        self.tableImage.drop()
+        self.tableImage = db['image']
         filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
         self.openImage(filename,self.admincanvas)
         self.tableImage.insert(dict(imageName=filename))
@@ -602,7 +606,6 @@ class GuiPart:
         return -1
 
 
-
     def blink(self, house):
         canvas = self.guardcanvas
         if do_blink:
@@ -634,7 +637,11 @@ class GuiPart:
                 else:
                     return
 
+<<<<<<< HEAD
             if not self.centralId == repeater or self.table.find_one(repeater=repeater):
+=======
+            if not (self.centralId == repeater or self.table.find_one(repeater=repeater)):
+>>>>>>> 2abfe23b29b8b51834d63204ae171afe2602f4a5
                 print "Alien Discovered", repeater
                 return
 
