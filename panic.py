@@ -601,7 +601,6 @@ class GuiPart:
         return -1
 
 
-
     def blink(self, house):
         canvas = self.guardcanvas
         if do_blink:
