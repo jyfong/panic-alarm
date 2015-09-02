@@ -536,9 +536,11 @@ class GuiPart:
         b1.grid(row=0,column=0, sticky=W)
         # b2 = Button(mapWindowTop,text="Ask Respond" , width=buttonwidth )
         # b2.grid(row=0,column=1, sticky=W)
-
-        row = self.tableImage.all().next()
-        self.openImage(row["imageName"],self.admincanvas)
+        try:
+            row = self.tableImage.all().next()
+            self.openImage(row["imageName"],self.admincanvas)
+        except:
+            print "No map found!"
 
         for item in self.table:
             if item['coordx'] != None and item['coordy'] != None:
@@ -799,14 +801,14 @@ class ThreadedClient:
 
         time.sleep(1) # cheat the program to let UI finish loading
 
-        try:
-            self.d = d2xx.open(0)
-            self.d.setBaudRate(115200)
-            self.d.setTimeouts(1, 0)
-        except:
-            self.queue.put("exit")
-            self.running = 0
-            return
+        # try:
+        self.d = d2xx.open(0)
+        self.d.setBaudRate(115200)
+        self.d.setTimeouts(1, 0)
+        # except:
+        #     self.queue.put("exit")
+        #     self.running = 0
+        #     return
         
         buffer = ''
         try:
