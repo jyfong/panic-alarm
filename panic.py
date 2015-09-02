@@ -24,11 +24,13 @@ db = dataset.connect('sqlite:///mydatabase.db')
 
 
 do_blink = False
-def start_blinking(self):
+def start_blinking():
+    global do_blink
     do_blink = True
     
 
-def stop_blinking(self):
+def stop_blinking():
+    global do_blink
     do_blink = False
 
 class LoginDialog(customtkSimpleDialog.Dialog):
