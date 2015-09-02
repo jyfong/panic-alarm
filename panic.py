@@ -372,7 +372,7 @@ class GuiPart:
 
             for repeater in self.table:
                 self.l1.insert(END, repeater['repeater'])
-            self.l1.select_set(0)
+            self.l1.select_set(1)
 
             self.listen = False
         else:
