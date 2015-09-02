@@ -47,6 +47,7 @@ class LoginDialog(customtkSimpleDialog.Dialog):
         if rows is not None:
             print "Login Success"
             self.result = 1
+            self.user = username
         else:
             tkMessageBox.showwarning("Fail","Wrong Username or Password!")
             print "Fail Login"
@@ -59,22 +60,67 @@ class LoginDialog(customtkSimpleDialog.Dialog):
 class PanicDialog(customtkSimpleDialog.Dialog):
 
     def body(self,master):
-
+        self.tablePanic = db['panic']
         self.topFrame = LabelFrame(master, text="Pending Panic Alarm", padx = 10 , pady = 10)
         self.topFrame.grid(row=0, sticky=N+S+E+W)
         self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
         self.btmFrame.grid(row=1, sticky=N+S+E+W)
 
-        mlb = multiListBox.MultiListbox(self.topFrame, (('Subject', 40), ('Sender', 20), ('Date', 10)))
-        for i in range(1000):
-            mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
-        mlb.grid(row=0, sticky=N+S+E+W)
+        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20), ('Phone', 20), ('Address', 30)))
+        self.mlb.grid(row=0, sticky=N+S+E+W)
 
-        self.button_1 = Button(self.btmFrame,text="Add" )
+        self.loadPendingAlarm()
+
+        self.button_1 = Button(self.btmFrame,text="Acknowledge", command=self.acknowledgeAll )
         self.button_1.grid(row=0,column=0, sticky=N+S+E+W)
+
 
     def canceled(self):
         pass
+
+    def acknowledgeAll(self):
+        login = LoginDialog(self.master)
+        if login.result == 0:
+            return
+
+        currentUser = login.user
+        db.query('UPDATE panic SET acknowledged="' + currentUser + '" WHERE acknowledged="None"')
+
+        self.mlb.delete(0,END)
+        self.loadPendingAlarm()
+        self.stop_blinking()
+    
+    def loadPendingAlarm(self):
+        pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
+
+        for item in pendingPanic:
+            currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
+            self.mlb.insert(END,(currentTime,item['name'],item['phone'],item['address']))
+
+class ConfirmedPanicDialog(customtkSimpleDialog.Dialog):
+
+    def body(self,master):
+        self.tablePanic = db['panic']
+        self.topFrame = LabelFrame(master, text="Confirmed Panic Alarm", padx = 10 , pady = 10)
+        self.topFrame.grid(row=0, sticky=N+S+E+W)
+        self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
+        self.btmFrame.grid(row=1, sticky=N+S+E+W)
+
+        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20), ('Phone', 20), ('Address', 30),('Acknowledged by',20)))
+        self.mlb.grid(row=0, sticky=N+S+E+W)
+
+        self.loadConfirmedAlarm()
+
+    def canceled(self):
+        pass
+
+    def loadConfirmedAlarm(self):
+        pendingPanic = db.query('SELECT panic.time, panic.repeater,panic.acknowledged, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged!="None"')
+
+        for item in pendingPanic:
+            currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
+            self.mlb.insert(END,(currentTime,item['name'],item['phone'],item['address'],item['acknowledged']))
+
 
 class ResizingCanvas(Canvas):
     def __init__(self,parent,**kwargs):
@@ -106,6 +152,7 @@ class GuiPart:
         self.tableImage = db['image']
         self.tableLog = db['log']
         self.tableUsers = db['users']
+        self.tablePanic = db['panic']
         self.initPosition = "+300+30"
         self.logger("Program startup properly..\n")
 
@@ -119,15 +166,16 @@ class GuiPart:
 
         # create a toplevel menu
         menubar = Menu(master)
-        filemenu = Menu(menubar, tearoff=0)
-        filemenu.add_separator()
-        filemenu.add_command(label="Exit", command=self.on_exit)
-        menubar.add_cascade(label="File", menu=filemenu)
 
+        # manage
         manageMenu = Menu(menubar, tearoff=0)
-        manageMenu.add_command(label="Devices",command=lambda:self.addDevices(master))
-        manageMenu.add_command(label="Users", command=lambda:self.addUsers(master))
+        manageMenu.add_command(label="Admin", command=lambda:self.addUsers(master))
+        manageMenu.add_command(label="Installer",command=lambda:self.addDevices(master))
         menubar.add_cascade(label="Manage" ,menu=manageMenu )
+
+        # view 
+        menubar.add_command(label="New Alarms",command=lambda:PanicDialog(master))
+        menubar.add_command(label="All Alarms",command=lambda:ConfirmedPanicDialog(master))
 
         # display the menu
         master.config(menu=menubar)
@@ -201,126 +249,130 @@ class GuiPart:
         self.x_error = math.modf(self.x_error)[0]
         self.y_error = math.modf(self.y_error)[0]
 
-
+    # admin page
     def addUsers(self,master):
         login = LoginDialog(master)
         if login.result == 1:
             adminPage = admin.AdminPage(master)
 
 
+    # installer page
     def addDevices(self,master):
-        login = LoginDialog(master)
+        result =  tkSimpleDialog.askstring("Database Operation", "Please enter password :", show='*')
+        if result == "1":
+            self.addDevicesWindow = Toplevel(self.master)
+            # Menubar for addDevices window
+            menubar = Menu(self.addDevicesWindow)
+            filemenu = Menu(menubar, tearoff=0)
+            filemenu.add_command(label="Clear DB", command=self.clearDatabase)
+            filemenu.add_separator()
+            menubar.add_cascade(label="File", menu=filemenu)
+            centralMenu = Menu(menubar, tearoff=0)
+            centralMenu.add_command(label="MCU Reset", command=self.mcuReset )
+            centralMenu.add_command(label="Check MCU ID", command=self.mcuIDChecking)
+            menubar.add_cascade(label="Central Menu" ,menu=centralMenu )
 
-        if login.result == 0:
-            return
+            self.addDevicesWindow.config(menu=menubar)
 
-        self.addDevicesWindow = Toplevel(self.master)
-        # Menubar for addDevices window
-        menubar = Menu(self.addDevicesWindow)
-        filemenu = Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Clear DB", command=self.clearDatabase)
-        filemenu.add_separator()
-        menubar.add_cascade(label="File", menu=filemenu)
-        centralMenu = Menu(menubar, tearoff=0)
-        centralMenu.add_command(label="MCU Reset", command=self.mcuReset )
-        centralMenu.add_command(label="Check MCU ID", command=self.mcuIDChecking)
-        menubar.add_cascade(label="Central Menu" ,menu=centralMenu )
-
-        self.addDevicesWindow.config(menu=menubar)
-
-        topFrame = LabelFrame(self.addDevicesWindow, text="Configure", padx= 5 , pady= 5)
-        topFrame.pack(side=TOP,fill=BOTH, expand=1)
-        middleFrame = LabelFrame(self.addDevicesWindow , text="Devices", padx= 5 , pady= 5)
-        middleFrame.pack(side=LEFT,fill=BOTH, expand=1)
-        middleFrameRight = LabelFrame(self.addDevicesWindow , text="Information", padx= 10 , pady= 10)
-        middleFrameRight.pack(side=LEFT,fill=BOTH, expand=1)
-        bottomFrame = LabelFrame(self.addDevicesWindow,text="Event Log", padx= 5 , pady= 5 )
-        bottomFrame.pack(side=BOTTOM,fill=BOTH, expand=1)    
-        # Init a frame for whole window
-        
+            topFrame = LabelFrame(self.addDevicesWindow, text="Configure", padx= 5 , pady= 5)
+            topFrame.pack(side=TOP,fill=BOTH, expand=1)
+            middleFrame = LabelFrame(self.addDevicesWindow , text="Devices", padx= 5 , pady= 5)
+            middleFrame.pack(side=LEFT,fill=BOTH, expand=1)
+            middleFrameRight = LabelFrame(self.addDevicesWindow , text="Information", padx= 10 , pady= 10)
+            middleFrameRight.pack(side=LEFT,fill=BOTH, expand=1)
+            bottomFrame = LabelFrame(self.addDevicesWindow,text="Event Log", padx= 5 , pady= 5 )
+            bottomFrame.pack(side=BOTTOM,fill=BOTH, expand=1)    
+            # Init a frame for whole window
+            
 
 
-        # Top Frame Buttons
-        buttonwidth = 20
-        b0 = Button(topFrame,text="Listen Mode" ,command=self.listenMode , width=buttonwidth)
-        b0.grid(row=0,column=0, sticky=W)
-        b1 = Button(topFrame,text="Configure Central ID" ,command=self.configCentralId , width=buttonwidth)
-        b1.grid(row=0,column=1, sticky=W)
-        b2 = Button(topFrame,text="Ask Respond", command=self.askRespond , width=buttonwidth )
-        b2.grid(row=0,column=2, sticky=W)
-        b3 = Button(topFrame,text="Repeater Search Path", command=self.repeaterSearchPath , width=buttonwidth)
-        b3.grid(row=0,column=3, sticky=W)
-        b4 = Button(topFrame,text="All Repeater Search Path", command=self.allRepeaterSearchPath, width=buttonwidth )
-        b4.grid(row=0,column=4, sticky=W)
-        
-        # Second Row
-        b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking, width=buttonwidth )
-        b5.grid(row=1,column=0, sticky=W)
-        b6 = Button(topFrame,text="Check Repeater Central ID", command=self.repeaterCheckCentralID , width=buttonwidth)
-        b6.grid(row=1,column=1, sticky=W)
-        b7 = Button(topFrame,text="Check Repeater Path", command=self.repeaterCheckPath , width=buttonwidth)
-        b7.grid(row=1,column=2, sticky=W)
-        b8 = Button(topFrame,text="Map", command=self.openMap , width=buttonwidth)
-        b8.grid(row=1,column=3, sticky=W)
-        b9 = Button(topFrame,text="View Old Logs", command=self.openLog , width=buttonwidth)
-        b9.grid(row=1,column=4, sticky=W)
+            # Top Frame Buttons
+            buttonwidth = 20
+            self.b0 = Button(topFrame,text="Listen Mode" ,command=self.listenMode , width=buttonwidth)
+            self.b0.grid(row=0,column=0, sticky=W)
+            b1 = Button(topFrame,text="Configure Central ID" ,command=self.configCentralId , width=buttonwidth)
+            b1.grid(row=0,column=1, sticky=W)
+            b2 = Button(topFrame,text="Ask Respond", command=self.askRespond , width=buttonwidth )
+            b2.grid(row=0,column=2, sticky=W)
+            b3 = Button(topFrame,text="Repeater Search Path", command=self.repeaterSearchPath , width=buttonwidth)
+            b3.grid(row=0,column=3, sticky=W)
+            b4 = Button(topFrame,text="All Repeater Search Path", command=self.allRepeaterSearchPath, width=buttonwidth )
+            b4.grid(row=0,column=4, sticky=W)
+            
+            # Second Row
+            b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking, width=buttonwidth )
+            b5.grid(row=1,column=0, sticky=W)
+            b6 = Button(topFrame,text="Check Repeater Central ID", command=self.repeaterCheckCentralID , width=buttonwidth)
+            b6.grid(row=1,column=1, sticky=W)
+            b7 = Button(topFrame,text="Check Repeater Path", command=self.repeaterCheckPath , width=buttonwidth)
+            b7.grid(row=1,column=2, sticky=W)
+            b8 = Button(topFrame,text="Map", command=self.openMap , width=buttonwidth)
+            b8.grid(row=1,column=3, sticky=W)
+            b9 = Button(topFrame,text="View Old Logs", command=self.openLog , width=buttonwidth)
+            b9.grid(row=1,column=4, sticky=W)
 
-        #Initialize variables for UI
-        listbox_width = 40
+            #Initialize variables for UI
+            listbox_width = 40
 
-        # Middle Frame
-        # Devices and owner information
-        scrollbar = Scrollbar(middleFrame)
-        self.l1 = Listbox(middleFrame, width=listbox_width,yscrollcommand=scrollbar.set, exportselection=0, height=24)
-        self.l1.grid(row=1,column=0)
-        self.l1.bind("<<ListboxSelect>>", self.loadEntry)
-        scrollbar.grid(row=1,column=1,sticky=N+S)
-        scrollbar.config( command = self.l1.yview)
-        nameLabel = Label(middleFrameRight, text="Name")
-        nameLabel.grid(row=0, column=0)
-        self.nameVar = StringVar()
-        self.name = Entry(middleFrameRight, textvariable=self.nameVar)
-        self.name.grid(row=1,column=0)
-        addressLabel = Label(middleFrameRight, text="Address")
-        addressLabel.grid(row=2, column=0)
-        self.addressVar = StringVar()
-        self.address = Entry(middleFrameRight, textvariable=self.addressVar)
-        self.address.grid(row=3,column=0)
-        phoneLabel = Label(middleFrameRight, text="Phone")
-        phoneLabel.grid(row=4, column=0)
-        self.phoneVar = StringVar()
-        self.phone = Entry(middleFrameRight, textvariable=self.phoneVar)
-        self.phone.grid(row=5,column=0)
+            # Middle Frame
+            # Devices and owner information
+            scrollbar = Scrollbar(middleFrame)
+            self.l1 = Listbox(middleFrame, width=listbox_width,yscrollcommand=scrollbar.set, exportselection=0, height=24)
+            self.l1.grid(row=1,column=0)
+            self.l1.bind("<<ListboxSelect>>", self.loadEntry)
+            scrollbar.grid(row=1,column=1,sticky=N+S)
+            scrollbar.config( command = self.l1.yview)
+            nameLabel = Label(middleFrameRight, text="Name")
+            nameLabel.grid(row=0, column=0)
+            self.nameVar = StringVar()
+            self.name = Entry(middleFrameRight, textvariable=self.nameVar)
+            self.name.grid(row=1,column=0)
+            addressLabel = Label(middleFrameRight, text="Address")
+            addressLabel.grid(row=2, column=0)
+            self.addressVar = StringVar()
+            self.address = Entry(middleFrameRight, textvariable=self.addressVar)
+            self.address.grid(row=3,column=0)
+            phoneLabel = Label(middleFrameRight, text="Phone")
+            phoneLabel.grid(row=4, column=0)
+            self.phoneVar = StringVar()
+            self.phone = Entry(middleFrameRight, textvariable=self.phoneVar)
+            self.phone.grid(row=5,column=0)
 
-        
-        # Middle Frame Buttons 
-        # b9 = Button(middleFrameRight,text="Load", command=self.loadEntry , width=buttonwidth)
-        # b9.grid(row=6,column=0, sticky=W)
-        b10 = Button(middleFrameRight,text="Update", command=self.updateEntry , width=buttonwidth)
-        b10.grid(row=7,column=0, sticky=W)
-        b11 = Button(middleFrameRight,text="Delete", command=self.deleteEntry , width=buttonwidth)
-        b11.grid(row=8,column=0, sticky=W)
-        
-        # Bottom Frame 
-        # Console logging
-        scrollbar3 = Scrollbar(bottomFrame)
-        self.log = Text(bottomFrame,yscrollcommand=scrollbar3.set)
-        self.log.grid(row=0,column=0)
-        scrollbar3.grid(row=0,column=1,sticky=N+S)
-        scrollbar3.config( command = self.log.yview)
-        clearlog_button = Button(bottomFrame,text="Clear log", command=self.clearLogger )
-        clearlog_button.grid(row=1,column=0, sticky=W)
+            
+            # Middle Frame Buttons 
+            # b9 = Button(middleFrameRight,text="Load", command=self.loadEntry , width=buttonwidth)
+            # b9.grid(row=6,column=0, sticky=W)
+            b10 = Button(middleFrameRight,text="Update", command=self.updateEntry , width=buttonwidth)
+            b10.grid(row=7,column=0, sticky=W)
+            b11 = Button(middleFrameRight,text="Delete", command=self.deleteEntry , width=buttonwidth)
+            b11.grid(row=8,column=0, sticky=W)
+            
+            # Bottom Frame 
+            # Console logging
+            scrollbar3 = Scrollbar(bottomFrame)
+            self.log = Text(bottomFrame,yscrollcommand=scrollbar3.set)
+            self.log.grid(row=0,column=0)
+            scrollbar3.grid(row=0,column=1,sticky=N+S)
+            scrollbar3.config( command = self.log.yview)
+            clearlog_button = Button(bottomFrame,text="Clear log", command=self.clearLogger )
+            clearlog_button.grid(row=1,column=0, sticky=W)
 
-        self.addDevicesWindow.protocol('WM_DELETE_WINDOW', self.closeAddDevices)
+            self.addDevicesWindow.protocol('WM_DELETE_WINDOW', self.closeAddDevices)
 
-        for repeater in self.table:
-            self.l1.insert(END, repeater['repeater'])
-        self.l1.select_set(0)
+            for repeater in self.table:
+                self.l1.insert(END, repeater['repeater'])
+            self.l1.select_set(0)
 
-        self.listen = False
+            self.listen = False
+        else:
+            tkMessageBox.showwarning("Error","Wrong Password!")
 
     def listenMode(self):
         self.listen = not self.listen
+        if self.listen == True:
+            self.b0.config(relief=SUNKEN)
+        else:
+            self.b0.config(relief=RAISED)
 
     def closeAddDevices(self):
         del self.log
@@ -521,9 +573,12 @@ class GuiPart:
 
     def panicAlarm(self,msg):
         master = self.master
+        cmd, repeater = msg
+        currentTime = time.time()
+        self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
         self.sos()
         panic = PanicDialog(master)
-        cmd, repeater = msg
+        
 
     def findHouseByRepeater(self, repeater):
         for h in self.houses:
@@ -550,7 +605,7 @@ class GuiPart:
 
     def decode(self,b):
 
-        m = re.match('.*RA(\w)(\d{8})(.{2})?', b)
+        m = re.match('.*RA(\w)(.{8})(.{2})?', b)
         if m:
             print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
 

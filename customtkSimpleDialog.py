@@ -14,6 +14,7 @@ class Dialog(Toplevel):
         self.parent = parent
 
         self.result = None
+        self.user = None
 
         body = Frame(self)
         self.initial_focus = self.body(body)

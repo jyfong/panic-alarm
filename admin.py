@@ -8,17 +8,30 @@ db = dataset.connect('sqlite:///mydatabase.db')
 class AdminPage:
     def __init__(self, master):
         self.tableUsers = db['users']
+        self.table = db['repeater']
     	# GUI INITIALIZATION
         self.master = master
+        listbox_width = 40
         self.adminWindow = Toplevel(self.master)
 
         self.leftFrame = LabelFrame(self.adminWindow, text="Guard Info", padx = 10 , pady = 10)
         self.rightFrame = LabelFrame(self.adminWindow, text="Guard List", padx = 10 , pady = 10)
         self.btmFrame = LabelFrame(self.adminWindow, text="Change Admin Password" , padx = 10, pady= 10)
+        self.listboxFrame = LabelFrame(self.adminWindow, text="House Details" , padx = 10, pady= 10)
+        self.editlistboxFrame = LabelFrame(self.adminWindow, text="Edit House Details" , padx = 10, pady= 10)
 
         self.leftFrame.grid(row=0,column=0, sticky=N+S+E+W)
         self.rightFrame.grid(row=0,column=1 ,sticky=E,rowspan=2)
        	self.btmFrame.grid(row=1,column=0 ,sticky=N+S+E+W)
+        self.listboxFrame.grid(row=2,column=0 ,sticky=N+S+E+W)
+        self.editlistboxFrame.grid(row=2,column=1 ,sticky=N+S+E+W)
+
+        scrollbar = Scrollbar(self.listboxFrame)
+        self.l1 = Listbox(self.listboxFrame, width=listbox_width,yscrollcommand=scrollbar.set, exportselection=0, height=24)
+        self.l1.grid(row=0,column=0)
+        # self.l1.bind("<<ListboxSelect>>", self.loadEntry)
+        scrollbar.grid(row=0,column=1,sticky=N+S)
+        scrollbar.config( command = self.l1.yview)
 
        	# LEFT FRAME
        	self.leftFrameTop = Frame(self.leftFrame)
@@ -79,6 +92,12 @@ class AdminPage:
         self.button_4.grid(row=0,column=0, sticky=E)
 
         self.loadGuards()
+
+        # repeaters = db.query('SELECT repeater.name,repeater.phone FROM repeater WHERE panic.repeater = repeater.repeater')
+
+        for repeater in self.table:
+            self.l1.insert(END, repeater['repeater']+' '+repeater['name'])
+        self.l1.select_set(0)
 
 
     def changeAdminPassword(self):
