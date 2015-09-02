@@ -623,6 +623,9 @@ class GuiPart:
                         self.l1.insert(END, repeater)
                         self.table.insert(dict(repeater=repeater))
 
+                else:
+                    return
+
             if not self.table.find_one(repeater=repeater):
                 print "Alien Discovered", repeater
                 return
