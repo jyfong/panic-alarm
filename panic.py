@@ -47,6 +47,7 @@ class LoginDialog(customtkSimpleDialog.Dialog):
         if rows is not None:
             print "Login Success"
             self.result = 1
+            self.user = username
         else:
             tkMessageBox.showwarning("Fail","Wrong Username or Password!")
             print "Fail Login"
@@ -65,20 +66,60 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
         self.btmFrame.grid(row=1, sticky=N+S+E+W)
 
-        mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20), ('Phone', 20), ('Address', 30)))
-        mlb.grid(row=0, sticky=N+S+E+W)
+        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20), ('Phone', 20), ('Address', 30)))
+        self.mlb.grid(row=0, sticky=N+S+E+W)
 
-        pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater')
+        self.loadPendingAlarm()
 
-        for item in pendingPanic:
-            currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
-            mlb.insert(END,(currentTime,item['name'],item['phone'],item['address']))
-
-        self.button_1 = Button(self.btmFrame,text="Acknowledge" )
+        self.button_1 = Button(self.btmFrame,text="Acknowledge", command=self.acknowledgeAll )
         self.button_1.grid(row=0,column=0, sticky=N+S+E+W)
+
 
     def canceled(self):
         pass
+
+    def acknowledgeAll(self):
+        login = LoginDialog(self.master)
+        if login.result == 0:
+            return
+
+        currentUser = login.user
+        db.query('UPDATE panic SET acknowledged="' + currentUser + '" WHERE acknowledged="None"')
+
+        self.mlb.delete(0,END)
+        self.loadPendingAlarm()
+    
+    def loadPendingAlarm(self):
+        pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
+
+        for item in pendingPanic:
+            currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
+            self.mlb.insert(END,(currentTime,item['name'],item['phone'],item['address']))
+
+class ConfirmedPanicDialog(customtkSimpleDialog.Dialog):
+
+    def body(self,master):
+        self.tablePanic = db['panic']
+        self.topFrame = LabelFrame(master, text="Confirmed Panic Alarm", padx = 10 , pady = 10)
+        self.topFrame.grid(row=0, sticky=N+S+E+W)
+        self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
+        self.btmFrame.grid(row=1, sticky=N+S+E+W)
+
+        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20), ('Phone', 20), ('Address', 30),('Acknowledged by',20)))
+        self.mlb.grid(row=0, sticky=N+S+E+W)
+
+        self.loadConfirmedAlarm()
+
+    def canceled(self):
+        pass
+
+    def loadConfirmedAlarm(self):
+        pendingPanic = db.query('SELECT panic.time, panic.repeater,panic.acknowledged, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged!="None"')
+
+        for item in pendingPanic:
+            currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
+            self.mlb.insert(END,(currentTime,item['name'],item['phone'],item['address'],item['acknowledged']))
+
 
 class ResizingCanvas(Canvas):
     def __init__(self,parent,**kwargs):
@@ -124,10 +165,6 @@ class GuiPart:
 
         # create a toplevel menu
         menubar = Menu(master)
-        filemenu = Menu(menubar, tearoff=0)
-        filemenu.add_separator()
-        filemenu.add_command(label="Exit", command=self.on_exit)
-        menubar.add_cascade(label="File", menu=filemenu)
 
         # manage
         manageMenu = Menu(menubar, tearoff=0)
@@ -136,9 +173,8 @@ class GuiPart:
         menubar.add_cascade(label="Manage" ,menu=manageMenu )
 
         # view 
-        viewMenu = Menu(menubar, tearoff=0)
-        viewMenu.add_command(label="Pending Alarms",command=lambda:PanicDialog(master))
-        menubar.add_cascade(label="View" ,menu=viewMenu )
+        menubar.add_command(label="New Alarms",command=lambda:PanicDialog(master))
+        menubar.add_command(label="All Alarms",command=lambda:ConfirmedPanicDialog(master))
 
         # display the menu
         master.config(menu=menubar)
@@ -163,7 +199,7 @@ class GuiPart:
         # Uneditable Map
         self.guardcanvas = ResizingCanvas(rightFrame,width=400, height=400, bg="grey")
         self.guardcanvas.pack()
-        self.guardcanvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self.guardcanvas.bind("<ButtonPress-1>", self._on_press)
 
 
@@ -250,8 +286,8 @@ class GuiPart:
 
         # Top Frame Buttons
         buttonwidth = 20
-        b0 = Button(topFrame,text="Listen Mode" ,command=self.listenMode , width=buttonwidth)
-        b0.grid(row=0,column=0, sticky=W)
+        self.b0 = Button(topFrame,text="Listen Mode" ,command=self.listenMode , width=buttonwidth)
+        self.b0.grid(row=0,column=0, sticky=W)
         b1 = Button(topFrame,text="Configure Central ID" ,command=self.configCentralId , width=buttonwidth)
         b1.grid(row=0,column=1, sticky=W)
         b2 = Button(topFrame,text="Ask Respond", command=self.askRespond , width=buttonwidth )
@@ -329,6 +365,10 @@ class GuiPart:
 
     def listenMode(self):
         self.listen = not self.listen
+        if self.listen == True:
+            self.b0.config(relief=SUNKEN)
+        else:
+            self.b0.config(relief=RAISED)
 
     def closeAddDevices(self):
         del self.log
