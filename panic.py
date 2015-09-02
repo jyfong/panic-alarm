@@ -22,6 +22,15 @@ state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
 db = dataset.connect('sqlite:///mydatabase.db')
 
+
+do_blink = False
+def start_blinking(self):
+    do_blink = True
+    
+
+def stop_blinking(self):
+    do_blink = False
+
 class LoginDialog(customtkSimpleDialog.Dialog):
     
 
@@ -88,7 +97,7 @@ class PanicDialog(customtkSimpleDialog.Dialog):
 
         self.mlb.delete(0,END)
         self.loadPendingAlarm()
-        self.stop_blinking()
+        stop_blinking()
     
     def loadPendingAlarm(self):
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
@@ -216,7 +225,6 @@ class GuiPart:
 
         self.x_error = 0
         self.y_error = 0
-        self.do_blink = False
         self.centralId = "00000001"
 
 
@@ -591,16 +599,10 @@ class GuiPart:
         return -1
 
 
-    def start_blinking(self):
-        self.do_blink = True
-        
-
-    def stop_blinking(self):
-        self.do_blink = False
 
     def blink(self, house):
         canvas = self.guardcanvas
-        if self.do_blink:
+        if do_blink:
             current_color = canvas.itemcget(house, "fill")
             new_color = "red" if current_color == "black" else "black"
             canvas.itemconfigure(house, fill=new_color)
@@ -664,7 +666,7 @@ class GuiPart:
                 self.queue.put((cmd,repeater))
                 msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
                 self.logger(msg)
-                self.start_blinking()
+                start_blinking()
                 self.blink(self.findHouseByRepeater(repeater))
 
             elif int(cmd) in range(1,4):
