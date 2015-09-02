@@ -88,6 +88,7 @@ class PanicDialog(customtkSimpleDialog.Dialog):
 
         self.mlb.delete(0,END)
         self.loadPendingAlarm()
+        self.stop_blinking()
     
     def loadPendingAlarm(self):
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
@@ -215,6 +216,8 @@ class GuiPart:
 
         self.x_error = 0
         self.y_error = 0
+        self.do_blink = False
+        self.centralId = "00000001"
 
 
     def _on_press(self, event):
@@ -543,7 +546,7 @@ class GuiPart:
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def openImage(self,filename,canvas):
-        self.image = Image.open(filename)
+        self.image = Image.open("map.jpg")
         self.img_copy= self.image.copy()
         # size = (self.mapWindow.winfo_screenwidth(), self.mapWindow.winfo_screenheight())
         # self.resizedImage = self.image.resize(size,Image.ANTIALIAS)
@@ -580,9 +583,32 @@ class GuiPart:
         panic = PanicDialog(master)
         
 
+    def findHouseByRepeater(self, repeater):
+        for h in self.houses:
+            if h.repeater == repeater:
+                return h.item
+
+        return -1
+
+
+    def start_blinking(self):
+        self.do_blink = True
+        
+
+    def stop_blinking(self):
+        self.do_blink = False
+
+    def blink(self, house):
+        canvas = self.guardcanvas
+        if self.do_blink:
+            current_color = canvas.itemcget(house, "fill")
+            new_color = "red" if current_color == "black" else "black"
+            canvas.itemconfigure(house, fill=new_color)
+            self.master.after(1000, lambda:self.blink(house))
+
     def decode(self,b):
 
-        m = re.match('.*RA(\w)(\d{8})(.{2})?', b)
+        m = re.match('.*RA(\w)(.{8})(.{2})?', b)
         if m:
             print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
 
@@ -600,7 +626,10 @@ class GuiPart:
                         self.l1.insert(END, repeater)
                         self.table.insert(dict(repeater=repeater))
 
-            if not self.table.find_one(repeater=repeater):
+                else:
+                    return
+
+            if not self.centralId == repeater || self.table.find_one(repeater=repeater):
                 print "Alien Discovered", repeater
                 return
 
@@ -635,6 +664,8 @@ class GuiPart:
                 self.queue.put((cmd,repeater))
                 msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
                 self.logger(msg)
+                self.start_blinking()
+                self.blink(self.findHouseByRepeater(repeater))
 
             elif int(cmd) in range(1,4):
                 msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
