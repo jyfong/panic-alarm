@@ -399,11 +399,14 @@ class GuiPart:
             self.l1.insert(END, repeater['repeater'])
 
     def loadEntry(self, event):
+        canvas.itemconfigure("house", fill="black")
         repeaterID = self.l1.get(self.l1.curselection())
         row = self.table.find_one(repeater=repeaterID)
         self.nameVar.set(row['name'])
         self.addressVar.set(row['address'])
         self.phoneVar.set(row['phone'])
+        canvas.itemconfigure(self.findHouseByRepeater(repeaterID), fill="yellow")
+
 
     def logger(self, msg):
         now = time.localtime()
@@ -631,7 +634,7 @@ class GuiPart:
                 else:
                     return
 
-            if not self.centralId == repeater || self.table.find_one(repeater=repeater):
+            if not self.centralId == repeater or self.table.find_one(repeater=repeater):
                 print "Alien Discovered", repeater
                 return
 
@@ -770,13 +773,13 @@ class ThreadedClient:
 
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
-        self.running = 1
-    	self.thread1 = threading.Thread(target=self.workerThread1)
-        self.thread1.start()
+     #    self.running = 1
+    	# self.thread1 = threading.Thread(target=self.workerThread1)
+     #    self.thread1.start()
 
-        # Start the periodic call in the GUI to check if the queue contains
-        # anything
-        self.periodicCall()
+     #    # Start the periodic call in the GUI to check if the queue contains
+     #    # anything
+     #    self.periodicCall()
 
     def periodicCall(self):
         """
