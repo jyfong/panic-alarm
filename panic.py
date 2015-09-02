@@ -556,7 +556,7 @@ class GuiPart:
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def openImage(self,filename,canvas):
-        self.image = Image.open("map.jpg")
+        self.image = Image.open(filename)
         self.img_copy= self.image.copy()
         # size = (self.mapWindow.winfo_screenwidth(), self.mapWindow.winfo_screenheight())
         # self.resizedImage = self.image.resize(size,Image.ANTIALIAS)
@@ -566,6 +566,8 @@ class GuiPart:
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def uploadImage(self):
+        self.tableImage.drop()
+        self.tableImage = db['image']
         filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
         self.openImage(filename,self.admincanvas)
         self.tableImage.insert(dict(imageName=filename))
