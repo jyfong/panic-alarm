@@ -1,7 +1,8 @@
 from Tkinter import *
 
 class MultiListbox(Frame):
-    def __init__(self, master, lists):
+    def __init__(self, master, lists,selectedlistbox):
+        self.selectedlistbox = selectedlistbox
         Frame.__init__(self, master)
         self.lists = []
         self.colmapping={}
@@ -28,10 +29,13 @@ class MultiListbox(Frame):
         sb.pack(expand=YES, fill=Y)
         self.lists[0]['yscrollcommand']=sb.set
 
+
     def _select(self, y):
+        
         row = self.lists[0].nearest(y)
         self.selection_clear(0, END)
         self.selection_set(row)
+        self.selectedlistbox()
         return 'break'
 
     def _button2(self, x, y):

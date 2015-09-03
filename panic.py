@@ -16,6 +16,7 @@ import time
 import tkSimpleDialog
 import customtkSimpleDialog
 import admin
+import guardMultiListBox
 import multiListBox
 
 state = 0 # for toggling fullscreen in mapWindow
@@ -70,7 +71,7 @@ class LoginDialog(customtkSimpleDialog.Dialog):
         
 class PanicDialog(customtkSimpleDialog.Dialog):
 
-    def body(self,master):
+    def body(self,master,guipartself=None):
         self.tablePanic = db['panic']
         self.topFrame = LabelFrame(master, text="Pending Panic Alarm", padx = 10 , pady = 10)
         self.topFrame.grid(row=0, sticky=N+S+E+W)
@@ -84,7 +85,6 @@ class PanicDialog(customtkSimpleDialog.Dialog):
 
         self.button_1 = Button(self.btmFrame,text="Acknowledge", command=self.acknowledgeAll )
         self.button_1.grid(row=0,column=0, sticky=N+S+E+W)
-
 
     def canceled(self):
         pass
@@ -100,6 +100,8 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.mlb.delete(0,END)
         self.loadPendingAlarm()
         stop_blinking()
+        for h in self.houses:
+            h.isPanic = False
     
     def loadPendingAlarm(self):
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
@@ -164,6 +166,7 @@ class GuiPart:
         self.tableLog = db['log']
         self.tableUsers = db['users']
         self.tablePanic = db['panic']
+        self.listen = False
         self.initPosition = "+300+30"
         self.logger("Program startup properly..\n")
 
@@ -203,15 +206,15 @@ class GuiPart:
         paned.add(rightFrame,minsize=16)
 
         # Listbox for details
-        mlb = multiListBox.MultiListbox(leftFrame, (('RepeaterID', 15), ('Name', 20), ('Address', 30)))
+        self.mlb = guardMultiListBox.MultiListbox(leftFrame, (('RepeaterID', 15), ('Name', 20), ('Address', 30)), self.selectedlistbox)
         # for i in range(1000):
         #     mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
-        mlb.pack(expand=YES,fill=BOTH)
+        self.mlb.pack(expand=YES,fill=BOTH)
 
         # Uneditable Map
         self.guardcanvas = ResizingCanvas(rightFrame,width=400, height=400, bg="grey")
         self.guardcanvas.pack()
-        self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.guardcanvas.bind("<MouseWheel>", self._on_mousewheel)
         self.guardcanvas.bind("<ButtonPress-1>", self._on_press)
 
 
@@ -221,7 +224,7 @@ class GuiPart:
         self.houses = []
 
         for item in self.table:
-            mlb.insert(END, (item['repeater'], item['name'], item['address']))
+            self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
             if item['coordx'] != None and item['coordy'] != None:
                 self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name']))
 
@@ -229,6 +232,12 @@ class GuiPart:
         self.y_error = 0
         self.centralId = "00000001"
 
+
+    def selectedlistbox(self):
+        
+        repeaterID = self.mlb.get(self.mlb.curselection())[0]
+        self.guardcanvas.itemconfigure("house", fill="black")
+        self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
 
     def _on_press(self, event):
         print 'click:', event.x, event.y
@@ -374,7 +383,6 @@ class GuiPart:
                 self.l1.insert(END, repeater['repeater'])
             self.l1.select_set(1)
 
-            self.listen = False
         else:
             tkMessageBox.showwarning("Error","Wrong Password!")
 
@@ -401,13 +409,12 @@ class GuiPart:
             self.l1.insert(END, repeater['repeater'])
 
     def loadEntry(self, event):
-        canvas.itemconfigure("house", fill="black")
+        
         repeaterID = self.l1.get(self.l1.curselection())
         row = self.table.find_one(repeater=repeaterID)
         self.nameVar.set(row['name'])
         self.addressVar.set(row['address'])
         self.phoneVar.set(row['phone'])
-        canvas.itemconfigure(self.findHouseByRepeater(repeaterID), fill="yellow")
 
 
     def logger(self, msg):
@@ -595,13 +602,13 @@ class GuiPart:
         currentTime = time.time()
         self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
         self.sos()
-        panic = PanicDialog(master)
+        panic = PanicDialog(master,self)
         
 
     def findHouseByRepeater(self, repeater):
         for h in self.houses:
             if h.repeater == repeater:
-                return h.item
+                return h
 
         return -1
 
@@ -628,16 +635,16 @@ class GuiPart:
             if cmd == "I":
                 if self.listen == True:
 
-                    msg = "Central ID = " + repeater + "\n"
+                    msg = "Setting Repeater Central ID = " + repeater + "\n"
                     self.logger(msg)
                     if not self.table.find_one(repeater=repeater):
                         self.l1.insert(END, repeater)
                         self.table.insert(dict(repeater=repeater))
-
+                    return
                 else:
                     return
 
-            if not (self.centralId == repeater or self.table.find_one(repeater=repeater)):
+            if not (self.centralId == repeater or self.table.find_one(repeater=repeater) or '00000000' == repeater):
                 print "Alien Discovered", repeater
                 return
 
@@ -673,7 +680,12 @@ class GuiPart:
                 msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
                 self.logger(msg)
                 start_blinking()
-                self.blink(self.findHouseByRepeater(repeater))
+                house = self.findHouseByRepeater(repeater)
+                self.blink(house.item)
+                house.isPanic = True
+            elif cmd == "J":
+                msg = "Current Central ID= " + repeater + "..\n"
+                self.logger(msg)
 
             elif int(cmd) in range(1,4):
                 msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
@@ -713,6 +725,7 @@ class Point:
         self.repeater = repeater
         self.canvas = canvas
         self.table = table
+        self.isPanic = False
 
         self._drag_data = {"x": 0, "y": 0, "item": None}
 
@@ -776,13 +789,13 @@ class ThreadedClient:
 
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
-     #    self.running = 1
-    	# self.thread1 = threading.Thread(target=self.workerThread1)
-     #    self.thread1.start()
+        self.running = 1
+    	self.thread1 = threading.Thread(target=self.workerThread1)
+        self.thread1.start()
 
-     #    # Start the periodic call in the GUI to check if the queue contains
-     #    # anything
-     #    self.periodicCall()
+        # Start the periodic call in the GUI to check if the queue contains
+        # anything
+        self.periodicCall()
 
     def periodicCall(self):
         """
@@ -807,14 +820,14 @@ class ThreadedClient:
 
         time.sleep(1) # cheat the program to let UI finish loading
 
-        # try:
-        self.d = d2xx.open(0)
-        self.d.setBaudRate(115200)
-        self.d.setTimeouts(1, 0)
-        # except:
-        #     self.queue.put("exit")
-        #     self.running = 0
-        #     return
+        try:
+            self.d = d2xx.open(0)
+            self.d.setBaudRate(115200)
+            self.d.setTimeouts(1, 0)
+        except:
+            self.queue.put("exit")
+            self.running = 0
+            return
         
         buffer = ''
         try:
