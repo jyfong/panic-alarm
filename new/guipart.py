@@ -23,7 +23,6 @@ import sqlalchemy
 import sqlite3
 import os.path
 from os import listdir, getcwd
-import Image
 
 from dialog import LoginDialog, PanicDialog, ConfirmedPanicDialog
 from point import Point, ResizingCanvas
