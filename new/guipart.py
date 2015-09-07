@@ -312,7 +312,7 @@ class GuiPart:
             b6.grid(row=1,column=1, sticky=W)
             b7 = Button(topFrame,text="Check Repeater Path", command=self.repeaterCheckPath , width=buttonwidth)
             b7.grid(row=1,column=2, sticky=W)
-            b8 = Button(topFrame,text="Map", command=lambda:GuardMap(master, self) , width=buttonwidth)
+            b8 = Button(topFrame,text="Map", command=lambda:self.openMap() , width=buttonwidth)
             b8.grid(row=1,column=3, sticky=W)
             b9 = Button(topFrame,text="View Old Logs", command=self.openLog , width=buttonwidth)
             b9.grid(row=1,column=4, sticky=W)
@@ -537,8 +537,9 @@ class GuiPart:
         # b2 = Button(mapWindowTop,text="Ask Respond" , width=buttonwidth )
         # b2.grid(row=0,column=1, sticky=W)
         try:
-            row = self.tableImage.all().next()
-            self.openImage(row["imageName"],self.admincanvas)
+            # row = self.tableImage.all().next()
+            # self.openImage(row["imageName"],self.admincanvas)
+            self.openImage('abc', self.admincanvas)
         except:
             print "No map found!"
 
@@ -566,11 +567,11 @@ class GuiPart:
 
     def uploadImage(self):
         self.tableImage.drop()
-        self.tableImage = db['PICTURE']
+        # self.tableImage = db['PICTURE']
         filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
-        self.openImage(filename,self.admincanvas)
         # self.tableImage.insert(dict(imageName=filename))
         self.insert_picture(filename)
+        self.openImage(filename,self.admincanvas)
 
     def toggleFullScreen(self,event):
         global state
@@ -644,9 +645,10 @@ class GuiPart:
         self.guardcanvas.bind("<ButtonPress-1>", self._on_press)
 
 
-        if self.tableImage.count() != 0:
-            row = self.tableImage.all().next()
-            self.openImage(row["imageName"],self.guardcanvas)
+        # if self.tableImage.count() != 0:
+            # row = self.tableImage.all().next()
+            # self.openImage(row["imageName"],self.guardcanvas)
+        self.openImage('abc', self.guardcanvas)
         self.houses = []
 
         for item in self.table:
