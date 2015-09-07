@@ -87,10 +87,13 @@ class GuiPart:
         #     mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
         self.mlb.pack(expand=YES,fill=BOTH)
 
-        self.openGuardMap(rightFrame)
 
         self.centralId = "00000001"
+        self.db_file = "mydatabase.db"
         self.initDB()
+        self.tablePicture = db["PICTURE"]
+
+        self.openGuardMap(rightFrame)
 
 
     def initDB(self):
@@ -102,6 +105,19 @@ class GuiPart:
         self.table.create_column('name', sqlalchemy.String)
         self.table.create_column('address', sqlalchemy.String)
         self.table.create_column('phone', sqlalchemy.String)
+
+
+
+        conn = sqlite3.connect(self.db_file)
+        # if db_is_new:
+        print 'Creating schema'
+        sql = '''create table if not exists PICTURE(
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        PICTURE BLOB,
+        TYPE TEXT,
+        FILE_NAME TEXT);'''
+        conn.execute(sql) # shortcut for conn.cursor().execute(sql)
+        conn.close()
 
 
     def processIncoming(self):
@@ -583,24 +599,8 @@ class GuiPart:
             state = 0
 
 
-    def create_or_open_db(self, db_file):
-        db_is_new = not os.path.exists(db_file)
-        conn = sqlite3.connect(db_file)
-        # if db_is_new:
-        print 'Creating schema'
-        sql = '''create table if not exists PICTURE(
-        ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        PICTURE BLOB,
-        TYPE TEXT,
-        FILE_NAME TEXT);'''
-        conn.execute(sql) # shortcut for conn.cursor().execute(sql)
-        # else:
-        #     print 'Schema exists\n'
-        return conn
-
     def insert_picture(self, picture_file):
-        conn = self.create_or_open_db('mydatabase.db')
-
+        conn = sqlite3.connect(self.db_file)
         with open(picture_file, 'rb') as input_file:
             ablob = input_file.read()
             base=os.path.basename(picture_file)
@@ -609,7 +609,7 @@ class GuiPart:
             sql = '''INSERT INTO PICTURE
             (PICTURE, TYPE, FILE_NAME)
             VALUES(?, ?, ?);'''
-            conn.execute(sql,[sqlite3.Binary(ablob), ext, 'afile']) 
+            conn.execute(sql,[sqlite3.Binary(ablob), ext, afile]) 
             conn.commit()
 
         conn.close()
@@ -626,7 +626,7 @@ class GuiPart:
         return filename
 
     def openPicture(self):
-        conn = self.create_or_open_db('mydatabase.db')
+        conn = sqlite3.connect(self.db_file)
         cur = conn.cursor()
         filename = self.extract_picture(cur, 1)
         cur.close()
@@ -648,7 +648,8 @@ class GuiPart:
         # if self.tableImage.count() != 0:
             # row = self.tableImage.all().next()
             # self.openImage(row["imageName"],self.guardcanvas)
-        self.openImage('abc', self.guardcanvas)
+        if self.tablePicture.count() != 0:
+            self.openImage('abc', self.guardcanvas)
         self.houses = []
 
         for item in self.table:
