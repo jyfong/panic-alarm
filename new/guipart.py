@@ -20,6 +20,10 @@ import guardMultiListBox
 import multiListBox
 
 import sqlalchemy
+import sqlite3
+import os.path
+from os import listdir, getcwd
+import Image
 
 from dialog import LoginDialog, PanicDialog, ConfirmedPanicDialog
 from point import Point, ResizingCanvas
@@ -550,7 +554,8 @@ class GuiPart:
         canvas.image = ImageTk.PhotoImage(self.image)
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
-    def openImage(self,filename,canvas):
+    def openImage(self, abc, canvas):
+        filename = self.openPicture()
         self.image = Image.open(filename)
         self.img_copy= self.image.copy()
         # size = (self.mapWindow.winfo_screenwidth(), self.mapWindow.winfo_screenheight())
@@ -562,10 +567,11 @@ class GuiPart:
 
     def uploadImage(self):
         self.tableImage.drop()
-        self.tableImage = db['image']
+        self.tableImage = db['PICTURE']
         filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
         self.openImage(filename,self.admincanvas)
-        self.tableImage.insert(dict(imageName=filename))
+        # self.tableImage.insert(dict(imageName=filename))
+        self.insert_picture(filename)
 
     def toggleFullScreen(self,event):
         global state
@@ -577,6 +583,55 @@ class GuiPart:
             state = 0
 
 
+    def create_or_open_db(self, db_file):
+        db_is_new = not os.path.exists(db_file)
+        conn = sqlite3.connect(db_file)
+        # if db_is_new:
+        print 'Creating schema'
+        sql = '''create table if not exists PICTURE(
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        PICTURE BLOB,
+        TYPE TEXT,
+        FILE_NAME TEXT);'''
+        conn.execute(sql) # shortcut for conn.cursor().execute(sql)
+        # else:
+        #     print 'Schema exists\n'
+        return conn
+
+    def insert_picture(self, picture_file):
+        conn = self.create_or_open_db('mydatabase.db')
+
+        with open(picture_file, 'rb') as input_file:
+            ablob = input_file.read()
+            base=os.path.basename(picture_file)
+            afile, ext = os.path.splitext(base)
+            print afile, ext
+            sql = '''INSERT INTO PICTURE
+            (PICTURE, TYPE, FILE_NAME)
+            VALUES(?, ?, ?);'''
+            conn.execute(sql,[sqlite3.Binary(ablob), ext, 'afile']) 
+            conn.commit()
+
+        conn.close()
+
+    def extract_picture(self, cursor, picture_id):
+
+        sql = "SELECT PICTURE, TYPE, FILE_NAME FROM PICTURE WHERE id = :id"
+        param = {'id': picture_id}
+        cursor.execute(sql, param)
+        ablob, ext, afile = cursor.fetchone()
+        filename = afile + ext
+        with open(filename, 'wb') as output_file:
+            output_file.write(ablob)
+        return filename
+
+    def openPicture(self):
+        conn = self.create_or_open_db('mydatabase.db')
+        cur = conn.cursor()
+        filename = self.extract_picture(cur, 1)
+        cur.close()
+        conn.close()
+        return filename
 
 
 ############################################# GUARD MAP ##########################################
