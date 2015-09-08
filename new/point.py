@@ -22,7 +22,7 @@ import multiListBox
 db = dataset.connect('sqlite:///mydatabase.db')
 
 class Point:
-    def __init__(self, table, canvas, coord, repeater,name, color='black'):
+    def __init__(self, table, canvas, coord, repeater,name, movable=True, color='black'):
 
         (x,y) = coord
         self.item = canvas.create_oval(x-5, y-5, x+5, y+5,
@@ -37,9 +37,10 @@ class Point:
 
         # add bindings for clicking, dragging and releasing over
         # any object with the "token" tag
-        canvas.tag_bind(self.item, "<ButtonPress-1>", self.OnTokenButtonPress)
-        canvas.tag_bind(self.item, "<ButtonRelease-1>", self.OnTokenButtonRelease)
-        canvas.tag_bind(self.item, "<B1-Motion>", self.OnTokenMotion)
+        if movable:
+            canvas.tag_bind(self.item, "<ButtonPress-1>", self.OnTokenButtonPress)
+            canvas.tag_bind(self.item, "<ButtonRelease-1>", self.OnTokenButtonRelease)
+            canvas.tag_bind(self.item, "<B1-Motion>", self.OnTokenMotion)
 
 
     def OnTokenButtonPress(self, event):

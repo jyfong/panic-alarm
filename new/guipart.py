@@ -684,8 +684,10 @@ class GuiPart:
 
         
         for item in self.table:
-            if item['coordx'] != None and item['coordy'] != None:
-                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name']))
+            if 'coordx' not in item:
+                print 'Please update '+item['repeater']+' info'
+            elif item['coordx'] != None and item['coordy'] != None:
+                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'], False))
 
 
         if self.tablePicture.count() != 0:
