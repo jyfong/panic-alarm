@@ -5,3 +5,5 @@
 **/*.pyc
 **/mydatabase.db
 **/*.db
+
+**/afile.jpg
