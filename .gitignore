@@ -4,3 +4,4 @@
 
 ./**/*.pyc
 ./**/mydatabase.db
+./**/*.db
