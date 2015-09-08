@@ -58,7 +58,7 @@ class LoginDialog(customtkSimpleDialog.Dialog):
         
 class PanicDialog(customtkSimpleDialog.Dialog):
 
-    def body(self,master,guipartself=None):
+    def body(self,master,guipart=None):
         self.guipart = guipart
         self.tablePanic = db['panic']
         self.topFrame = LabelFrame(master, text="Pending Panic Alarm", padx = 10 , pady = 10)
