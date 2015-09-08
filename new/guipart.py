@@ -97,6 +97,10 @@ class GuiPart:
         self.do_blink = False
 
 
+        for item in self.table:
+            self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
+
+
     def initDB(self):
         self.tablePanic.create_column('time', sqlalchemy.Integer)
         self.tablePanic.create_column('repeater', sqlalchemy.String)
@@ -555,6 +559,8 @@ class GuiPart:
         self.admincanvas = Canvas(mapWindowBottom, width=mapWindow.winfo_screenwidth()-4, height=mapWindow.winfo_screenheight()-4)
         self.admincanvas.pack()
 
+        self.mapWindow.protocol('WM_DELETE_WINDOW', self.closeInstallerMap)
+
         # Buttons for map window
         buttonwidth = 20
         b1 = Button(mapWindowTop,text="Upload" ,command=self.uploadImage , width=buttonwidth)
@@ -564,13 +570,17 @@ class GuiPart:
         try:
             # row = self.tableImage.all().next()
             # self.openImage(row["imageName"],self.admincanvas)
-            self.openImage('abc', self.admincanvas)
+            self.openImage(self.admincanvas)
         except:
             print "No map found!"
 
         for item in self.table:
             if item['coordx'] != None and item['coordy'] != None:
                 Point(self.table, self.admincanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
+
+    def closeInstallerMap(self):
+        self.mapWindow.destroy()
+        self.updateGuardMap()
 
     def resizeImage(self, canvas, new_width, new_height):
         print 'image:', new_width, new_height
@@ -579,7 +589,7 @@ class GuiPart:
         canvas.image = ImageTk.PhotoImage(self.image)
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
-    def openImage(self, abc, canvas):
+    def openImage(self, canvas):
         filename = self.openPicture()
         self.image = Image.open(filename)
         self.img_copy= self.image.copy()
@@ -596,7 +606,7 @@ class GuiPart:
         filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
         # self.tableImage.insert(dict(imageName=filename))
         self.insert_picture(filename)
-        self.openImage(filename,self.admincanvas)
+        self.openImage(self.admincanvas)
 
     def toggleFullScreen(self,event):
         global state
@@ -658,16 +668,30 @@ class GuiPart:
             # row = self.tableImage.all().next()
             # self.openImage(row["imageName"],self.guardcanvas)
         if self.tablePicture.count() != 0:
-            self.openImage('abc', self.guardcanvas)
+            self.openImage(self.guardcanvas)
         self.houses = []
-
-        for item in self.table:
-            self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
-            if item['coordx'] != None and item['coordy'] != None:
-                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name']))
 
         self.x_error = 0
         self.y_error = 0
+
+        self.updateGuardMap()
+
+
+    def updateGuardMap(self):
+        for h in reversed(self.houses):
+            self.guardcanvas.delete(h.item)
+            self.houses.pop()
+
+        
+        for item in self.table:
+            if item['coordx'] != None and item['coordy'] != None:
+                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name']))
+
+
+        if self.tablePicture.count() != 0:
+            self.openImage(self.guardcanvas)
+
+        self.guardcanvas.tag_raise("house")
 
 
     def _on_press(self, event):
