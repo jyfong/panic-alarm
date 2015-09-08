@@ -37,13 +37,10 @@ class GuiPart:
         self.send = send
         self.repeater = None
         self.current = None
-        self.table = db['repeater']
-        # self.tableImage = db['image']
-        self.tableLog = db['log']
-        self.tableUsers = db['users']
-        self.tablePanic = db['panic']
         self.listen = False
-        self.initPosition = "+300+30"
+        self.initPosition = "+250+50"
+        self.db_file = "mydatabase.db"
+        self.initDB()
         self.logger("Program startup properly..\n")
 
         # Add default admin user and password
@@ -89,19 +86,21 @@ class GuiPart:
 
 
         self.centralId = "00000001"
-        self.db_file = "mydatabase.db"
-        self.initDB()
-        self.tablePicture = db["PICTURE"]
-
+        
         self.openGuardMap(rightFrame)
         self.do_blink = False
-
 
         for item in self.table:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
 
 
     def initDB(self):
+        self.table = db['repeater']
+        self.tableImage = db['image']
+        self.tableLog = db['log']
+        self.tableUsers = db['users']
+        self.tablePanic = db['panic']
+
         self.tablePanic.create_column('time', sqlalchemy.Integer)
         self.tablePanic.create_column('repeater', sqlalchemy.String)
         self.tablePanic.create_column('acknowledged', sqlalchemy.String)
@@ -110,9 +109,9 @@ class GuiPart:
         self.table.create_column('name', sqlalchemy.String)
         self.table.create_column('address', sqlalchemy.String)
         self.table.create_column('phone', sqlalchemy.String)
+        self.initPictureTable()
 
-
-
+    def initPictureTable(self):
         conn = sqlite3.connect(self.db_file)
         # if db_is_new:
         print 'Creating schema'
@@ -123,6 +122,7 @@ class GuiPart:
         FILE_NAME TEXT);'''
         conn.execute(sql) # shortcut for conn.cursor().execute(sql)
         conn.close()
+        self.tablePicture = db["PICTURE"]
 
 
     def processIncoming(self):
@@ -231,7 +231,7 @@ class GuiPart:
     def addUsers(self,master):
         login = LoginDialog(master)
         if login.result == 1:
-            adminPage = admin.AdminPage(master)
+            adminPage = admin.AdminPage(master,self)
 
 
 
@@ -544,9 +544,11 @@ class GuiPart:
         # topLevel method is to open new window
         
         mapWindow = Toplevel(self.master)
+
         self.mapWindow = mapWindow
-        mapWindow.attributes('-fullscreen', False)
-        mapWindow.geometry(self.initPosition)
+        # mapWindow.attributes('-fullscreen', False)
+        # mapWindow.geometry(self.initPosition)
+        
         mapWindow.bind('<Escape>',self.toggleFullScreen)
 
         # Frames for map window
@@ -556,7 +558,7 @@ class GuiPart:
         mapWindowBottom.pack()
         # mapWindowBottom.bind('<Configure>', self.resizeImage)
 
-        self.admincanvas = Canvas(mapWindowBottom, width=mapWindow.winfo_screenwidth()-4, height=mapWindow.winfo_screenheight()-4)
+        self.admincanvas = Canvas(mapWindowBottom)
         self.admincanvas.pack()
 
         self.mapWindow.protocol('WM_DELETE_WINDOW', self.closeInstallerMap)
@@ -601,9 +603,9 @@ class GuiPart:
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def uploadImage(self):
-        self.tableImage.drop()
-        # self.tableImage = db['PICTURE']
-        filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
+        self.tablePicture.drop()
+        self.initPictureTable()
+        filename = tkFileDialog.askopenfilename(filetypes=[('PNG','*.png'),('JPG', '*.jpg')], parent=self.mapWindow)
         # self.tableImage.insert(dict(imageName=filename))
         self.insert_picture(filename)
         self.openImage(self.admincanvas)
