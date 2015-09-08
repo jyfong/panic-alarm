@@ -2,6 +2,10 @@ from Tkinter import *
 import multiListBox
 import dataset
 import tkMessageBox
+import sqlite3
+import tkFileDialog
+import shutil
+from datetime import date
 
 db = dataset.connect('sqlite:///mydatabase.db')
 
@@ -13,6 +17,18 @@ class AdminPage:
         self.master = master
         listbox_width = 40
         self.adminWindow = Toplevel(self.master)
+        self.adminWindow.geometry("+%d+%d" % ( master.winfo_rootx()+50, master.winfo_rooty()))
+
+        # create a toplevel menu
+        menubar = Menu(self.adminWindow)
+
+        # view 
+        menubar.add_command(label="Backup Database",command=lambda:self.backupDB())
+        menubar.add_command(label="Purge Database",command=lambda:self.purgeDB())
+        menubar.add_command(label="Restore Database",command=lambda:self.restoreDB())
+
+        # display the menu
+        self.adminWindow.config(menu=menubar)
 
         self.leftFrame = LabelFrame(self.adminWindow, text="Guard Info", padx = 10 , pady = 10)
         self.rightFrame = LabelFrame(self.adminWindow, text="Guard List", padx = 10 , pady = 10)
@@ -27,7 +43,7 @@ class AdminPage:
         self.editlistboxFrame.grid(row=2,column=1 ,sticky=N+S+E+W)
 
         scrollbar = Scrollbar(self.listboxFrame)
-        self.l1 = Listbox(self.listboxFrame, width=listbox_width,yscrollcommand=scrollbar.set, exportselection=0, height=24)
+        self.l1 = Listbox(self.listboxFrame, width=listbox_width,yscrollcommand=scrollbar.set, exportselection=0, height=16)
         self.l1.grid(row=0,column=0)
         self.l1.bind("<<ListboxSelect>>", self.loadEntry)
         scrollbar.grid(row=0,column=1,sticky=N+S)
@@ -177,3 +193,23 @@ class AdminPage:
         self.l1.delete(0,END)
         for repeater in self.table:
             self.l1.insert(END, repeater['repeater'])
+
+    def backupDB(self):
+        self.dbfile = "mydatabase.db"
+        connection = sqlite3.connect(self.dbfile)
+        cursor = connection.cursor()
+
+        # Lock database before making a backup
+        cursor.execute('begin immediate')
+        # Make new backup file
+        initialfile = date.today().isoformat() + ".db"
+        backup_file = tkFileDialog.asksaveasfilename(filetypes=[('SQLITE_DB','*.db')], initialfile=initialfile)
+        shutil.copyfile(self.dbfile, backup_file)
+        # Unlock database
+        connection.rollback()
+
+    def purgeDB(self):
+        pass
+
+    def restoreDB(self):
+        pass
