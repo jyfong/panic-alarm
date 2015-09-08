@@ -59,6 +59,7 @@ class LoginDialog(customtkSimpleDialog.Dialog):
 class PanicDialog(customtkSimpleDialog.Dialog):
 
     def body(self,master,guipartself=None):
+        self.guipart = guipart
         self.tablePanic = db['panic']
         self.topFrame = LabelFrame(master, text="Pending Panic Alarm", padx = 10 , pady = 10)
         self.topFrame.grid(row=0, sticky=N+S+E+W)
@@ -86,7 +87,7 @@ class PanicDialog(customtkSimpleDialog.Dialog):
 
         self.mlb.delete(0,END)
         self.loadPendingAlarm()
-        stop_blinking()
+        self.guipart.stop_blinking()
         for h in self.houses:
             h.isPanic = False
     

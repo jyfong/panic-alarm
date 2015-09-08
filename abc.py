@@ -1,36 +1,78 @@
-from Tkinter import *
+import sqlite3
+import os.path
+from os import listdir, getcwd
+import Image
 
-class MyApp(Tk):
-    def __init__(self):
-        Tk.__init__(self)
-        fr = Frame(self)
-        fr.pack()
-        self.canvas  = Canvas(fr, height = 100, width = 100)
-        self.canvas.pack()
-        self.rect = self.canvas.create_rectangle(25, 25, 75, 75, fill = "white")
-        self.do_blink = False
-        start_button = Button(self, text="start blinking", 
-                              command=self.start_blinking)
-        stop_button = Button(self, text="stop blinking", 
-                              command=self.stop_blinking)
-        start_button.pack()
-        stop_button.pack()
+def create_or_open_db(db_file):
+    db_is_new = not os.path.exists(db_file)
+    conn = sqlite3.connect(db_file)
+    # if db_is_new:
+    print 'Creating schema'
+    sql = '''create table if not exists PICTURE(
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    PICTURE BLOB,
+    TYPE TEXT,
+    FILE_NAME TEXT);'''
+    conn.execute(sql) # shortcut for conn.cursor().execute(sql)
+    # else:
+    #     print 'Schema exists\n'
+    return conn
 
-    def start_blinking(self):
-        self.do_blink = True
-        self.blink()
+def insert_picture(conn, picture_file):
+    with open(picture_file, 'rb') as input_file:
+        ablob = input_file.read()
+        base=os.path.basename(picture_file)
+        afile, ext = os.path.splitext(base)
+        print afile, ext
+        sql = '''INSERT INTO PICTURE
+        (PICTURE, TYPE, FILE_NAME)
+        VALUES(?, ?, ?);'''
+        conn.execute(sql,[sqlite3.Binary(ablob), ext, 'afile']) 
+        conn.commit()
+    print 'insert_picture'
 
-    def stop_blinking(self):
-        self.do_blink = False
+conn = create_or_open_db('mydatabase.db')
+insert_picture(conn, 'map.jpg')
 
-    def blink(self):
-        if self.do_blink:
-            current_color = self.canvas.itemcget(self.rect, "fill")
-            new_color = "red" if current_color == "white" else "white"
-            self.canvas.itemconfigure(self.rect, fill=new_color)
-            self.after(1000, self.blink)
+picture_file = "./map.jpg"
+insert_picture(conn, picture_file)
+conn.close()
 
 
-if __name__ == "__main__":
-    root = MyApp()
-    root.mainloop()
+def extract_picture(cursor, picture_id):
+    sql = "SELECT PICTURE, TYPE, FILE_NAME FROM PICTURE WHERE id = :id"
+    param = {'id': picture_id}
+    cursor.execute(sql, param)
+    ablob, ext, afile = cursor.fetchone()
+    filename = afile + ext
+    with open(filename, 'wb') as output_file:
+        output_file.write(ablob)
+    print filename
+    return ablob
+
+conn = create_or_open_db('mydatabase.db')
+cur = conn.cursor()
+filename = extract_picture(cur, 1)
+cur.close()
+conn.close()
+
+# print filename
+import Tkinter 
+import Image, ImageTk
+from StringIO import StringIO
+
+# open a SPIDER image and convert to byte
+format
+im = Image.open(StringIO(filename))
+
+root = Tkinter.Tk()  
+# A root window for displaying objects
+
+ # Convert the Image object into a TkPhoto 
+object
+tkimage = ImageTk.PhotoImage(im)
+
+Tkinter.Label(root, image=tkimage).pack() 
+# Put it in the display window
+
+root.mainloop() # Start the GUI

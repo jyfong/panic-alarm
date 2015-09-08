@@ -233,42 +233,6 @@ class GuiPart:
         self.centralId = "00000001"
 
 
-    def selectedlistbox(self):
-        
-        repeaterID = self.mlb.get(self.mlb.curselection())[0]
-        self.guardcanvas.itemconfigure("house", fill="black")
-        self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
-
-    def _on_press(self, event):
-        print 'click:', event.x, event.y
-
-    def _on_mousewheel(self, event):
-        scale = 1 + (0.10 *(event.delta/120))
-
-        w, h = self.image.size
-        
-        self.resizeImage(self.guardcanvas, round(w*scale), round(h*scale))
-        self.guardcanvas.tag_raise("house")
-
-        sw, sh = round(w*scale) / w, round(h*scale) / h
-
-        for h in self.houses:
-            item = h.item
-            self.transformPoint(item, sw, sh)
-
-    
-    def transformPoint(self, item, scalex, scaley):
-        a, b, c, d = self.guardcanvas.coords(item)
-        x, y = a+5, b+5
-        mx, my = a*scalex-a, b*scaley-b
-        self.x_error += mx - round(mx)
-        self.y_error += my - round(my)
-        import math
-        self.guardcanvas.move(item, int(round(mx) + math.modf(self.x_error)[1]), int(round(my) + math.modf(self.y_error)[1]))
-        # print round(mx) + math.modf(self.x_error)[1]
-        self.x_error = math.modf(self.x_error)[0]
-        self.y_error = math.modf(self.y_error)[0]
-
     # admin page
     def addUsers(self,master):
         login = LoginDialog(master)
@@ -424,6 +388,44 @@ class GuiPart:
         if 'log' in dir(self):
             self.log.insert(END, msg)
         self.tableLog.insert(dict(time=timeinsec,msg=msg))
+
+
+    #multiListBox selected event
+    def selectedlistbox(self):
+        
+        repeaterID = self.mlb.get(self.mlb.curselection())[0]
+        self.guardcanvas.itemconfigure("house", fill="black")
+        self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
+
+    def _on_press(self, event):
+        print 'click:', event.x, event.y
+
+    def _on_mousewheel(self, event):
+        scale = 1 + (0.10 *(event.delta/120))
+
+        w, h = self.image.size
+        
+        self.resizeImage(self.guardcanvas, round(w*scale), round(h*scale))
+        self.guardcanvas.tag_raise("house")
+
+        sw, sh = round(w*scale) / w, round(h*scale) / h
+
+        for h in self.houses:
+            item = h.item
+            self.transformPoint(item, sw, sh)
+
+    
+    def transformPoint(self, item, scalex, scaley):
+        a, b, c, d = self.guardcanvas.coords(item)
+        x, y = a+5, b+5
+        mx, my = a*scalex-a, b*scaley-b
+        self.x_error += mx - round(mx)
+        self.y_error += my - round(my)
+        import math
+        self.guardcanvas.move(item, int(round(mx) + math.modf(self.x_error)[1]), int(round(my) + math.modf(self.y_error)[1]))
+        # print round(mx) + math.modf(self.x_error)[1]
+        self.x_error = math.modf(self.x_error)[0]
+        self.y_error = math.modf(self.y_error)[0]
 
     def clearLogger(self):
         self.log.delete('0.0', END)
@@ -640,15 +642,12 @@ class GuiPart:
                     if not self.table.find_one(repeater=repeater):
                         self.l1.insert(END, repeater)
                         self.table.insert(dict(repeater=repeater))
-                    return
-                else:
-                    return
 
-            if not (self.centralId == repeater or self.table.find_one(repeater=repeater) or '00000000' == repeater):
+            elif not (self.centralId == repeater or self.table.find_one(repeater=repeater) or '00000000' == repeater):
                 print "Alien Discovered", repeater
                 return
 
-            if cmd == 'A':
+            elif cmd == 'A':
                 msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
                 self.logger(msg)
             elif cmd == "E":

@@ -64,7 +64,7 @@ class GuiPart:
         menubar.add_cascade(label="Manage" ,menu=manageMenu )
 
         # view 
-        menubar.add_command(label="New Alarms",command=lambda:PanicDialog(master))
+        menubar.add_command(label="New Alarms",command=lambda:PanicDialog(master, self))
         menubar.add_command(label="All Alarms",command=lambda:ConfirmedPanicDialog(master))
 
         # display the menu
@@ -94,6 +94,7 @@ class GuiPart:
         self.tablePicture = db["PICTURE"]
 
         self.openGuardMap(rightFrame)
+        self.do_blink = False
 
 
     def initDB(self):
@@ -193,9 +194,9 @@ class GuiPart:
             elif cmd == "P":
                 msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
                 self.logger(msg)
-                # start_blinking()
-                # house = self.findHouseByRepeater(repeater)
-                # self.blink(house.item)
+                self.start_blinking()
+                house = self.findHouseByRepeater(repeater)
+                self.blink(house.item)
                 # house.isPanic = True
                 self.panicAlarm((cmd, repeater))
             elif cmd == "J":
@@ -213,6 +214,14 @@ class GuiPart:
 
     def handlePanic(self):
         pass
+
+
+    def start_blinking(self):
+        self.do_blink = True
+        
+
+    def stop_blinking(self):
+        self.do_blink = False
 
     # admin page
     def addUsers(self,master):
@@ -519,7 +528,7 @@ class GuiPart:
 
 
 
-################################################ ADMIN MAP ########################################
+################################################ INSTALLER MAP ########################################
 
 
     ####                 ###
@@ -702,7 +711,7 @@ class GuiPart:
 
     def blink(self, house):
         canvas = self.guardcanvas
-        if do_blink:
+        if self.do_blink:
             current_color = canvas.itemcget(house, "fill")
             new_color = "red" if current_color == "black" else "black"
             canvas.itemconfigure(house, fill=new_color)
