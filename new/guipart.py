@@ -38,7 +38,7 @@ class GuiPart:
         self.repeater = None
         self.current = None
         self.table = db['repeater']
-        self.tableImage = db['image']
+        # self.tableImage = db['image']
         self.tableLog = db['log']
         self.tableUsers = db['users']
         self.tablePanic = db['panic']
@@ -703,11 +703,18 @@ class GuiPart:
         scale = 1 + (0.10 *(event.delta/120))
 
         w, h = self.image.size
+
+
+        new_width = round(w*scale)
+        new_height = round(h*scale)
+
+        if new_width < 500 or new_height > 2000:
+            return "Exceed zooming level"
         
-        self.resizeImage(self.guardcanvas, round(w*scale), round(h*scale))
+        self.resizeImage(self.guardcanvas, new_width, new_height)
         self.guardcanvas.tag_raise("house")
 
-        sw, sh = round(w*scale) / w, round(h*scale) / h
+        sw, sh = new_width / w, new_height / h
 
         for h in self.houses:
             item = h.item

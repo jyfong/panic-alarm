@@ -49,13 +49,13 @@ class ThreadedClient:
 
         # Set up the thread to do asynchronous I/O
         # More can be made if necessary
-        self.running = 1
-    	self.thread1 = threading.Thread(target=self.workerThread1)
-        self.thread1.start()
+     #    self.running = 1
+    	# self.thread1 = threading.Thread(target=self.workerThread1)
+     #    self.thread1.start()
 
-        # Start the periodic call in the GUI to check if the queue contains
-        # anything
-        self.periodicCall()
+     #    # Start the periodic call in the GUI to check if the queue contains
+     #    # anything
+     #    self.periodicCall()
 
     def periodicCall(self):
         """
