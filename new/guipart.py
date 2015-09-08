@@ -94,6 +94,7 @@ class GuiPart:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
 
 
+
     def initDB(self):
         self.table = db['repeater']
         self.tableImage = db['image']
@@ -259,7 +260,12 @@ class GuiPart:
         self.guardcanvas.itemconfigure("house", fill="black")
         self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
 
+    def onPointSelect(self, repeater):
 
+        for i in range(self.mlb.size()):
+            if repeater == self.mlb.get(i)[0]:
+                self.mlb.selection_set(i)
+        
 
     
             
@@ -694,7 +700,7 @@ class GuiPart:
             if 'coordx' not in item:
                 print 'Please update '+item['repeater']+' info'
             elif item['coordx'] != None and item['coordy'] != None:
-                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'], False))
+                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'], self.onPointSelect, False))
 
 
         if self.tablePicture.count() != 0:
@@ -710,11 +716,18 @@ class GuiPart:
         scale = 1 + (0.10 *(event.delta/120))
 
         w, h = self.image.size
+
+
+        new_width = round(w*scale)
+        new_height = round(h*scale)
+
+        if new_width < 500 or new_height > 2000:
+            return "Exceed zooming level"
         
-        self.resizeImage(self.guardcanvas, round(w*scale), round(h*scale))
+        self.resizeImage(self.guardcanvas, new_width, new_height)
         self.guardcanvas.tag_raise("house")
 
-        sw, sh = round(w*scale) / w, round(h*scale) / h
+        sw, sh = new_width / w, new_height / h
 
         for h in self.houses:
             item = h.item
