@@ -6,7 +6,7 @@ import tkMessageBox
 db = dataset.connect('sqlite:///mydatabase.db')
 
 class AdminPage:
-    def __init__(self, master):
+    def __init__(self, master, guipart):
         self.tableUsers = db['users']
         self.table = db['repeater']
     	# GUI INITIALIZATION
@@ -112,6 +112,8 @@ class AdminPage:
         b10.grid(row=6,column=0, sticky=W)
         b11 = Button(self.editlistboxFrame,text="Delete", command=self.deleteEntry , width=20)
         b11.grid(row=7,column=0, sticky=W)
+        b12 = Button(self.editlistboxFrame,text="Map", command=guipart.openMap , width=20)
+        b12.grid(row=8,column=0, sticky=W)
 
         # load stuff
         self.loadGuards()

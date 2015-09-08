@@ -231,7 +231,7 @@ class GuiPart:
     def addUsers(self,master):
         login = LoginDialog(master)
         if login.result == 1:
-            adminPage = admin.AdminPage(master)
+            adminPage = admin.AdminPage(master,self)
 
 
 
@@ -545,8 +545,8 @@ class GuiPart:
         
         mapWindow = Toplevel(self.master)
         self.mapWindow = mapWindow
-        mapWindow.attributes('-fullscreen', False)
-        mapWindow.geometry(self.initPosition)
+        # mapWindow.attributes('-fullscreen', False)
+        # mapWindow.geometry(self.initPosition)
         mapWindow.bind('<Escape>',self.toggleFullScreen)
 
         # Frames for map window
@@ -601,7 +601,7 @@ class GuiPart:
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def uploadImage(self):
-        self.tableImage.drop()
+        self.tablePicture.drop()
         # self.tableImage = db['PICTURE']
         filename = tkFileDialog.askopenfilename(filetypes=[('JPG', '*.jpg')])
         # self.tableImage.insert(dict(imageName=filename))
