@@ -94,6 +94,7 @@ class GuiPart:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
 
 
+
     def initDB(self):
         self.table = db['repeater']
         self.tableImage = db['image']
@@ -254,7 +255,12 @@ class GuiPart:
         self.guardcanvas.itemconfigure("house", fill="black")
         self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
 
+    def onPointSelect(self, repeater):
 
+        for i in range(self.mlb.size()):
+            if repeater == self.mlb.get(i)[0]:
+                self.mlb.selection_set(i)
+        
 
     
             
@@ -689,7 +695,7 @@ class GuiPart:
             if 'coordx' not in item:
                 print 'Please update '+item['repeater']+' info'
             elif item['coordx'] != None and item['coordy'] != None:
-                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'], False))
+                self.houses.append(Point(self.table, self.guardcanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'], self.onPointSelect, False))
 
 
         if self.tablePicture.count() != 0:
