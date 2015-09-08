@@ -2,6 +2,6 @@
 /admin.pyc
 /multiListBox.pyc
 
-./**/*.pyc
-./**/mydatabase.db
-./**/*.db
+**/*.pyc
+**/mydatabase.db
+**/*.db
