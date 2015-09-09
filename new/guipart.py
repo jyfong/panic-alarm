@@ -52,7 +52,10 @@ class GuiPart:
 
         # Set up the GUI
         master.title("DF Panic Alarm")
-        master.geometry(self.initPosition)
+        # master.overrideredirect(True)
+        w, h = master.winfo_screenwidth(), master.winfo_screenheight()
+        # master.attributes('-fullscreen', True)
+        master.geometry("%dx%d+0+0" % (w, h))
 
         # create a toplevel menu
         menubar = Menu(master)
@@ -269,19 +272,11 @@ class GuiPart:
         for i in range(self.mlb.size()):
             if repeater == self.mlb.get(i)[0]:
                 self.mlb.selection_set(i)
-        
-
-    
-            
-
-
-
 
     def sos(self): 
-        while True:
-            for i in range(0, 3): winsound.Beep(2000, 100) 
-            for i in range(0, 3): winsound.Beep(2000, 400) 
-            for i in range(0, 3): winsound.Beep(2000, 100)
+        for i in range(0, 3): winsound.Beep(2000, 100) 
+        for i in range(0, 3): winsound.Beep(2000, 400) 
+        for i in range(0, 3): winsound.Beep(2000, 100)
 
     def panicAlarm(self,msg):
         master = self.master
@@ -561,8 +556,10 @@ class GuiPart:
         mapWindow = Toplevel(self.master)
 
         self.mapWindow = mapWindow
-        # mapWindow.attributes('-fullscreen', False)
-        # mapWindow.geometry(self.initPosition)
+        # mapWindow.attributes('-fullscreen', True)
+        w, h = mapWindow.winfo_screenwidth(), mapWindow.winfo_screenheight()
+        mapWindow.geometry("%dx%d+0+0" % (w, h))
+        
         
         mapWindow.bind('<Escape>',self.toggleFullScreen)
 
