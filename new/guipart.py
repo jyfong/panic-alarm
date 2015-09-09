@@ -43,7 +43,6 @@ class GuiPart:
         self.initDB()
         self.logger("Program startup properly..\n")
 
-
         toplevel = master.winfo_toplevel()
         toplevel.wm_state('zoomed')
 
@@ -288,7 +287,7 @@ class GuiPart:
         currentTime = time.time()
         self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
         self.sos()
-        # panic = PanicDialog(master,self)
+        panic = PanicDialog(master,self)
         print 'End SOS'
 
 
@@ -308,7 +307,7 @@ class GuiPart:
     def openInstaller(self):
         
         result =  tkSimpleDialog.askstring("Database Operation", "Please enter password :", show='*')
-        if result == "1":
+        if result == "dfelectronic123":
             self.addDevicesWindow = Toplevel(self.master)
             # Menubar for addDevices window
             menubar = Menu(self.addDevicesWindow)
@@ -561,8 +560,8 @@ class GuiPart:
 
         self.mapWindow = mapWindow
         # mapWindow.attributes('-fullscreen', True)
-        w, h = mapWindow.winfo_screenwidth(), mapWindow.winfo_screenheight()
-        mapWindow.geometry("%dx%d+0+0" % (w, h))
+        toplevel = mapWindow.winfo_toplevel()
+        toplevel.wm_state('zoomed')
         
         
         mapWindow.bind('<Escape>',self.toggleFullScreen)
