@@ -217,6 +217,8 @@ class AdminPage:
         elif dbcommand == "purge":
             connection.rollback()
             cursor.execute("INSERT INTO history(time,repeater,acknowledged) SELECT * FROM log WHERE time <=" + str(time.time() - 31536000) + "")
+            conn.commit()
+            conn.close()
             if tkMessageBox.showinfo("Purge Success", "Deleted logs older than 1 year!"):
                 pass
         else:
