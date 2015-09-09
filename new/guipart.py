@@ -277,9 +277,14 @@ class GuiPart:
                 self.mlb.selection_set(i)
 
     def sos(self): 
+
         for i in range(0, 3): winsound.Beep(2000, 100) 
         for i in range(0, 3): winsound.Beep(2000, 400) 
         for i in range(0, 3): winsound.Beep(2000, 100)
+        
+        if self.do_blink:
+            self.master.after(1000, lambda:self.sos)   
+
 
     def panicAlarm(self,msg):
         master = self.master
