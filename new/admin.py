@@ -6,6 +6,9 @@ import sqlite3
 import tkFileDialog
 import shutil
 from datetime import date
+import os
+import sys
+import time
 
 db = dataset.connect('sqlite:///mydatabase.db')
 
@@ -23,9 +26,9 @@ class AdminPage:
         menubar = Menu(self.adminWindow)
 
         # view 
-        menubar.add_command(label="Backup Database",command=lambda:self.backupDB())
-        menubar.add_command(label="Purge Database",command=lambda:self.purgeDB())
-        menubar.add_command(label="Restore Database",command=lambda:self.restoreDB())
+        menubar.add_command(label="Backup Database",command=lambda:self.dbOperation("backup"))
+        menubar.add_command(label="Purge Database",command=lambda:self.dbOperation("purge"))
+        menubar.add_command(label="Restore Database",command=lambda:self.dbOperation("restore"))
 
         # display the menu
         self.adminWindow.config(menu=menubar)
@@ -194,7 +197,7 @@ class AdminPage:
         for repeater in self.table:
             self.l1.insert(END, repeater['repeater'])
 
-    def backupDB(self):
+    def dbOperation(self, dbcommand):
         self.dbfile = "mydatabase.db"
         connection = sqlite3.connect(self.dbfile)
         cursor = connection.cursor()
@@ -203,13 +206,25 @@ class AdminPage:
         cursor.execute('begin immediate')
         # Make new backup file
         initialfile = date.today().isoformat() + ".db"
-        backup_file = tkFileDialog.asksaveasfilename(filetypes=[('SQLITE_DB','*.db')], initialfile=initialfile)
-        shutil.copyfile(self.dbfile, backup_file)
+        if dbcommand == "backup":
+            backup_file = tkFileDialog.asksaveasfilename(filetypes=[('SQLITE_DB','*.db')], initialfile=initialfile)
+            if backup_file:
+                shutil.copyfile(self.dbfile, backup_file)   
+        elif dbcommand == "restore":
+            backup_file = tkFileDialog.askopenfilename(filetypes=[('SQLITE_DB','*.db')])
+            if backup_file:
+                shutil.copyfile(backup_file, self.dbfile)
+        elif dbcommand == "purge":
+            connection.rollback()
+            cursor.execute("INSERT INTO history(time,repeater,acknowledged) SELECT * FROM log WHERE time <=" + str(time.time() - 31536000) + "")
+            if tkMessageBox.showinfo("Purge Success", "Deleted logs older than 1 year!"):
+                pass
+        else:
+            print "DB operation failure"
         # Unlock database
         connection.rollback()
 
-    def purgeDB(self):
-        pass
+        if tkMessageBox.showinfo("Restart Required", "Restarting Application!"):
+            python = sys.executable
+            os.execl(python, python, * sys.argv)
 
-    def restoreDB(self):
-        pass

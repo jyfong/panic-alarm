@@ -101,10 +101,15 @@ class GuiPart:
         self.tableLog = db['log']
         self.tableUsers = db['users']
         self.tablePanic = db['panic']
+        self.tableHistory = db['history']
 
         self.tablePanic.create_column('time', sqlalchemy.Integer)
         self.tablePanic.create_column('repeater', sqlalchemy.String)
         self.tablePanic.create_column('acknowledged', sqlalchemy.String)
+
+        self.tableHistory.create_column('time', sqlalchemy.Integer)
+        self.tableHistory.create_column('repeater', sqlalchemy.String)
+        self.tableHistory.create_column('acknowledged', sqlalchemy.String)
 
         self.table.create_column('repeater', sqlalchemy.String)
         self.table.create_column('name', sqlalchemy.String)
