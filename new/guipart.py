@@ -103,7 +103,7 @@ class GuiPart:
         for item in self.table:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
 
-
+        self.checkUnacknowledgedPanic()
 
     def initDB(self):
         self.table = db['repeater']
@@ -139,6 +139,12 @@ class GuiPart:
         conn.execute(sql) # shortcut for conn.cursor().execute(sql)
         conn.close()
         self.tablePicture = db["PICTURE"]
+
+    def checkUnacknowledgedPanic(self):
+        if self.tablePanic.find_one(acknowledged="None"):
+            PanicDialog(master, self)
+
+        self.master.after(10000, lambda:self.checkUnacknowledgedPanic)   
 
 
     def processIncoming(self):
@@ -281,7 +287,7 @@ class GuiPart:
         for i in range(0, 3): winsound.Beep(2000, 100) 
         for i in range(0, 3): winsound.Beep(2000, 400) 
         for i in range(0, 3): winsound.Beep(2000, 100)
-        
+
         if self.do_blink:
             self.master.after(1000, lambda:self.sos)   
 
