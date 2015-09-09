@@ -104,7 +104,7 @@ class GuiPart:
         for item in self.table:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
 
-
+        self.checkUnacknowledgedPanic()
 
     def initDB(self):
         self.table = db['repeater']
