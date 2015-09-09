@@ -43,6 +43,10 @@ class GuiPart:
         self.initDB()
         self.logger("Program startup properly..\n")
 
+
+        toplevel = master.winfo_toplevel()
+        toplevel.wm_state('zoomed')
+
         self.centralId = "00000001"
         self.do_blink = False
 
