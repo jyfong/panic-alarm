@@ -142,7 +142,7 @@ class GuiPart:
 
     def checkUnacknowledgedPanic(self):
         if self.tablePanic.find_one(acknowledged="None"):
-            PanicDialog(master, self)
+            PanicDialog(self.master, self)
 
         self.master.after(10000, lambda:self.checkUnacknowledgedPanic)   
 
