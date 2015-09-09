@@ -43,6 +43,9 @@ class GuiPart:
         self.initDB()
         self.logger("Program startup properly..\n")
 
+        self.centralId = "00000001"
+        self.do_blink = False
+
         # Add default admin user and password
         if self.tableUsers.count() == 0:
             self.tableUsers.insert(dict(username="admin",password="admin",role=""))
@@ -78,17 +81,18 @@ class GuiPart:
         paned.add(leftFrame,minsize=16)
         paned.add(rightFrame,minsize=16)
 
+        self.hbar=Scrollbar(rightFrame,orient=HORIZONTAL)
+        self.hbar.pack(side=BOTTOM,fill=X)
+        self.vbar=Scrollbar(rightFrame,orient=VERTICAL)
+        self.vbar.pack(side=RIGHT,fill=Y)
+
+        self.openGuardMap(rightFrame)
+
         # Listbox for details
         self.mlb = guardMultiListBox.MultiListbox(leftFrame, (('RepeaterID', 15), ('Name', 20), ('Address', 30)), self.selectedlistbox)
         # for i in range(1000):
         #     mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
         self.mlb.pack(expand=YES,fill=BOTH)
-
-
-        self.centralId = "00000001"
-        
-        self.openGuardMap(rightFrame)
-        self.do_blink = False
 
         for item in self.table:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
@@ -675,7 +679,10 @@ class GuiPart:
         self.guardcanvas.pack()
         self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self.guardcanvas.bind("<ButtonPress-1>", self._on_press)
-
+        self.guardcanvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set, scrollregion=(0, 0, self.guardcanvas.winfo_screenwidth(), self.guardcanvas.winfo_screenheight()))
+        
+        self.hbar.config(command=self.guardcanvas.xview)
+        self.vbar.config(command=self.guardcanvas.yview)
 
         # if self.tableImage.count() != 0:
             # row = self.tableImage.all().next()
