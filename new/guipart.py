@@ -717,7 +717,7 @@ class GuiPart:
         new_height = round(h*scale)
 
         if new_width < 500 or new_height > 2000:
-            return "Exceed zooming level"
+            return "zooming level exceed"
         
         self.resizeImage(self.guardcanvas, new_width, new_height)
         self.guardcanvas.tag_raise("house")
