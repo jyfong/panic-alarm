@@ -599,13 +599,6 @@ class GuiPart:
         self.mapWindow.destroy()
         self.updateGuardMap()
 
-    def resizeImage(self, canvas, new_width, new_height):
-        print 'image:', new_width, new_height
-        self.guardcanvas.config(width=new_width, height=new_height)
-        self.image = self.img_copy.resize((new_width, new_height))
-
-        canvas.image = ImageTk.PhotoImage(self.image)
-        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def openImage(self, canvas):
         filename = self.openPicture()
@@ -680,10 +673,6 @@ class GuiPart:
         self.guardcanvas.pack()
         self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
         self.guardcanvas.bind("<ButtonPress-1>", self._on_press)
-        self.guardcanvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set, scrollregion=(0, 0, self.guardcanvas.winfo_screenwidth(), self.guardcanvas.winfo_screenheight()))
-        
-        self.hbar.config(command=self.guardcanvas.xview)
-        self.vbar.config(command=self.guardcanvas.yview)
 
         # if self.tableImage.count() != 0:
             # row = self.tableImage.all().next()
@@ -715,6 +704,19 @@ class GuiPart:
             self.openImage(self.guardcanvas)
 
         self.guardcanvas.tag_raise("house")
+
+
+    def resizeImage(self, canvas, new_width, new_height):
+        print 'image:', new_width, new_height
+        self.guardcanvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set, scrollregion=(0, 0, new_width, new_height))
+        
+        self.hbar.config(command=self.guardcanvas.xview)
+        self.vbar.config(command=self.guardcanvas.yview)
+
+        self.image = self.img_copy.resize((new_width, new_height))
+
+        canvas.image = ImageTk.PhotoImage(self.image)
+        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
 
     def _on_press(self, event):
