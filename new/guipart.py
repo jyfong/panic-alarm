@@ -597,6 +597,7 @@ class GuiPart:
 
     def resizeImage(self, canvas, new_width, new_height):
         print 'image:', new_width, new_height
+        self.guardcanvas.config(width=new_width, height=new_height)
         self.image = self.img_copy.resize((new_width, new_height))
 
         canvas.image = ImageTk.PhotoImage(self.image)
