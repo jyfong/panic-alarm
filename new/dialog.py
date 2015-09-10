@@ -74,8 +74,10 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.button_1 = Button(self.btmFrame,text="Acknowledge", command=self.acknowledgeAll )
         self.button_1.grid(row=0,column=0, sticky=N+S+E+W)
 
+        self.guipart.isOpenPanicDialog = True
+
     def canceled(self):
-        pass
+        self.guipart.isOpenPanicDialog = False
 
     def acknowledgeAll(self):
         login = LoginDialog(self.master)

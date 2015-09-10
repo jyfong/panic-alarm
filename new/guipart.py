@@ -49,6 +49,8 @@ class GuiPart:
 
         self.centralId = "00000001"
         self.do_blink = False
+        self.isOpenPanicDialog = False
+        self.panicdlg = None
 
         # Add default admin user and password
         if self.tableUsers.count() == 0:
@@ -104,7 +106,7 @@ class GuiPart:
         for item in self.table:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
 
-        self.checkUnacknowledgedPanic()
+        self.checkPanic()
 
     def initDB(self):
         self.table = db['repeater']
@@ -141,11 +143,6 @@ class GuiPart:
         conn.close()
         self.tablePicture = db["PICTURE"]
 
-    def checkUnacknowledgedPanic(self):
-        if self.tablePanic.find_one(acknowledged="None"):
-            PanicDialog(master, self)
-
-        self.master.after(10000, lambda:self.checkUnacknowledgedPanic)   
 
 
     def processIncoming(self):
@@ -221,11 +218,8 @@ class GuiPart:
             elif cmd == "P":
                 msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
                 self.logger(msg)
-                self.start_blinking()
-                house = self.findHouseByRepeater(repeater)
-                self.blink(house.item)
                 # house.isPanic = True
-                self.panicAlarm((cmd, repeater))
+                self.panicAlarm(cmd, repeater)
             elif cmd == "J":
                 msg = "Current Central ID= " + repeater + "..\n"
                 self.logger(msg)
@@ -293,15 +287,35 @@ class GuiPart:
             self.master.after(1000, lambda:self.sos)   
 
 
-    def panicAlarm(self,msg):
+    def panicAlarm(self, cmd, repeater):
         master = self.master
-        cmd, repeater = msg
         currentTime = time.time()
         self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
-        self.sos()
-        panic = PanicDialog(master,self)
-        print 'End SOS'
+        checkPanic()
+        
 
+    def checkPanic(self):
+
+        self.openPanicDlg()
+        
+        pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
+
+        self.start_blinking()
+        for item in pendingPanic:
+            house = self.findHouseByRepeater(item['repeater'])
+            self.blink(house.item)
+
+        self.sosThread = threading.Thread(target=self.sos)
+        self.sosThread.start()
+
+    def openPanicDlg(self):
+        if self.tablePanic.find_one(acknowledged="None"):
+            if self.isOpenPanicDialog:
+                self.panicdlg.loadPendingAlarm()
+            else:
+                self.panicdlg = PanicDialog(master,self)
+
+        self.master.after(10000, lambda:self.openPanicDlg)   
 
 
     def on_exit(self):
