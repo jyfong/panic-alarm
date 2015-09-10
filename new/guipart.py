@@ -72,9 +72,8 @@ class GuiPart:
         menubar.add_cascade(label="Manage" ,menu=manageMenu )
 
         # view 
-        menubar.add_command(label="New Alarms",command=lambda:PanicDialog(master, self))
+        menubar.add_command(label="New Alarms",command=lambda:PanicDialog(master,self))
         menubar.add_command(label="All Alarms",command=lambda:ConfirmedPanicDialog(master))
-
         # display the menu
         master.config(menu=menubar)
 
@@ -106,6 +105,7 @@ class GuiPart:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
 
         self.checkPanic()
+        
 
     def initDB(self):
         self.table = db['repeater']
@@ -282,38 +282,39 @@ class GuiPart:
         for i in range(0, 3): winsound.Beep(2000, 100)
 
         if self.do_blink:
-            self.master.after(1000, lambda:self.sos)   
+            self.sosThread = threading.Thread(target=self.sos)
+            self.master.after(3000, lambda:self.sosThread.start())   
 
 
     def panicAlarm(self, cmd, repeater):
-        master = self.master
         currentTime = time.time()
         self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
-        checkPanic()
+        self.checkPanic()
         
 
     def checkPanic(self):
-
-        self.openPanicDlg()
         
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
-
+        self.doBlinkThread = dict()
         self.start_blinking()
         for item in pendingPanic:
             house = self.findHouseByRepeater(item['repeater'])
-            self.blink(house.item)
+            self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
+            self.doBlinkThread[item['repeater']].start()
 
         self.sosThread = threading.Thread(target=self.sos)
         self.sosThread.start()
+
+        self.openPanicDlg()
 
     def openPanicDlg(self):
         if self.tablePanic.find_one(acknowledged="None"):
             if self.isOpenPanicDialog:
                 self.panicdlg.loadPendingAlarm()
             else:
-                self.panicdlg = PanicDialog(master,self)
+                self.panicdlg = PanicDialog(self.master,self)
 
-        self.master.after(10000, lambda:self.openPanicDlg)   
+        self.master.after(10000, lambda:self.openPanicDlg())   
 
 
     def on_exit(self):
@@ -795,4 +796,6 @@ class GuiPart:
             current_color = canvas.itemcget(house, "fill")
             new_color = "red" if current_color == "black" else "black"
             canvas.itemconfigure(house, fill=new_color)
-            self.master.after(1000, lambda:self.blink(house))   
+            doBlinkThread = threading.Thread(target=lambda:self.blink(house))
+            self.master.after(1000, lambda:doBlinkThread.start())
+            

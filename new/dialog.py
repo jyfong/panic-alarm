@@ -24,7 +24,7 @@ db = dataset.connect('sqlite:///mydatabase.db')
 class LoginDialog(customtkSimpleDialog.Dialog):
     
 
-    def body(self, master):
+    def body(self, master,guipart):
         self.tableUsers = db['users']
 
         Label(master, text="Username:").grid(row=0)
@@ -55,10 +55,13 @@ class LoginDialog(customtkSimpleDialog.Dialog):
 
     def canceled(self):
         self.result = 0
+
+    def closed(self):
+        pass
         
 class PanicDialog(customtkSimpleDialog.Dialog):
 
-    def body(self,master,guipart=None):
+    def body(self,master,guipart):
         self.guipart = guipart
         self.tablePanic = db['panic']
         self.topFrame = LabelFrame(master, text="Pending Panic Alarm", padx = 10 , pady = 10)
@@ -77,7 +80,7 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.guipart.isOpenPanicDialog = True
 
     def canceled(self):
-        self.guipart.isOpenPanicDialog = False
+        pass
 
     def acknowledgeAll(self):
         login = LoginDialog(self.master)
@@ -100,9 +103,12 @@ class PanicDialog(customtkSimpleDialog.Dialog):
             currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
             self.mlb.insert(END,(currentTime,item['name'],item['phone'],item['address']))
 
+    def closed(self):
+        self.guipart.isOpenPanicDialog = False
+
 class ConfirmedPanicDialog(customtkSimpleDialog.Dialog):
 
-    def body(self,master):
+    def body(self,master,guipart):
         self.tablePanic = db['panic']
         self.topFrame = LabelFrame(master, text="Confirmed Panic Alarm", padx = 10 , pady = 10)
         self.topFrame.grid(row=0, sticky=N+S+E+W)
@@ -123,3 +129,6 @@ class ConfirmedPanicDialog(customtkSimpleDialog.Dialog):
         for item in pendingPanic:
             currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
             self.mlb.insert(END,(currentTime,item['name'],item['phone'],item['address'],item['acknowledged']))
+
+    def closed(self):
+        pass

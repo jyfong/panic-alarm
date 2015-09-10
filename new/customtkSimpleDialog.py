@@ -3,7 +3,7 @@ import os
 
 class Dialog(Toplevel):
 
-    def __init__(self, parent, title = None):
+    def __init__(self, parent,guipart=None, title = None):
 
         Toplevel.__init__(self, parent)
         self.transient(parent)
@@ -17,7 +17,7 @@ class Dialog(Toplevel):
         self.user = None
 
         body = Frame(self)
-        self.initial_focus = self.body(body)
+        self.initial_focus = self.body(body,guipart)
         body.pack(padx=5, pady=5)
 
         self.buttonbox()
@@ -80,13 +80,13 @@ class Dialog(Toplevel):
     def closeWindow(self, event=None):
         self.parent.focus_set()
         self.destroy()
+        self.closed()
 
     def cancel(self, event=None):
 
         self.canceled()
         # put focus back to the parent window
-        self.parent.focus_set()
-        self.destroy()
+        self.closeWindow()
 
     #
     # command hooks
