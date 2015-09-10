@@ -276,15 +276,11 @@ class GuiPart:
                 self.mlb.selection_set(i)
 
     def sos(self): 
-
-        for i in range(0, 3): winsound.Beep(2000, 100) 
-        for i in range(0, 3): winsound.Beep(2000, 400) 
-        for i in range(0, 3): winsound.Beep(2000, 100)
-
-        if self.do_blink:
-            self.sosThread = threading.Thread(target=self.sos)
-            self.master.after(3000, lambda:self.sosThread.start())   
-
+        while self.do_blink:
+            for i in range(0, 3): winsound.Beep(2000, 100) 
+            for i in range(0, 3): winsound.Beep(2000, 400) 
+            for i in range(0, 3): winsound.Beep(2000, 100)
+            time.sleep(0.5)
 
     def panicAlarm(self, cmd, repeater):
         currentTime = time.time()
@@ -299,8 +295,11 @@ class GuiPart:
         self.start_blinking()
         for item in pendingPanic:
             house = self.findHouseByRepeater(item['repeater'])
-            self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
-            self.doBlinkThread[item['repeater']].start()
+            while house.isPanic == False:
+                house.isPanic = True
+                # self.master.after(1000,lambda:self.blink(house))
+                self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
+                self.doBlinkThread[item['repeater']].start()
 
         self.sosThread = threading.Thread(target=self.sos)
         self.sosThread.start()
@@ -706,18 +705,19 @@ class GuiPart:
             self.openImage(self.guardcanvas)
         self.houses = []
 
+
         self.x_error = 0
         self.y_error = 0
 
         self.updateGuardMap()
 
-
     def updateGuardMap(self):
+        # clear houses from canvas
         for h in reversed(self.houses):
             self.guardcanvas.delete(h.item)
             self.houses.pop()
 
-        
+        # append houses to canvas
         for item in self.table:
             if 'coordx' not in item:
                 print 'Please update '+item['repeater']+' info'
@@ -792,10 +792,12 @@ class GuiPart:
 
     def blink(self, house):
         canvas = self.guardcanvas
-        if self.do_blink:
+        print 'blink',canvas,self.do_blink
+        while self.do_blink:
             current_color = canvas.itemcget(house, "fill")
             new_color = "red" if current_color == "black" else "black"
             canvas.itemconfigure(house, fill=new_color)
-            doBlinkThread = threading.Thread(target=lambda:self.blink(house))
-            self.master.after(1000, lambda:doBlinkThread.start())
-            
+            time.sleep(0.5)
+            # doBlinkThread = threading.Thread(target=lambda:self.blink(house))
+            # self.master.after(100, lambda:doBlinkThread.start())
+    
