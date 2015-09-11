@@ -231,9 +231,6 @@ class GuiPart:
             print 'Cant decode', b
 
 
-    def handlePanic(self):
-        pass
-
 
     def start_blinking(self):
         self.do_blink = True
@@ -264,7 +261,7 @@ class GuiPart:
 
    
     def selectedlistbox(self):
-        
+        print 'selected'
         repeaterID = self.mlb.get(self.mlb.curselection())[0]
         self.guardcanvas.itemconfigure("house", fill="black")
         self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
@@ -291,20 +288,20 @@ class GuiPart:
     def checkPanic(self):
         
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
-        self.doBlinkThread = dict()
+        # self.doBlinkThread = dict()
         self.start_blinking()
         for item in pendingPanic:
             house = self.findHouseByRepeater(item['repeater'])
-            while house.isPanic == False:
-                house.isPanic = True
-                # self.master.after(1000,lambda:self.blink(house))
-                self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
-                self.doBlinkThread[item['repeater']].start()
+            # if house.isPanic == False:
+            #     house.isPanic = True
+            self.blink(house)
+                # self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
+                # self.doBlinkThread[item['repeater']].start()
 
-        self.sosThread = threading.Thread(target=self.sos)
-        self.sosThread.start()
+        # self.sosThread = threading.Thread(target=self.sos)
+        # self.sosThread.start()
 
-        self.openPanicDlg()
+        # self.openPanicDlg()
 
     def openPanicDlg(self):
         if self.tablePanic.find_one(acknowledged="None"):
@@ -793,11 +790,12 @@ class GuiPart:
     def blink(self, house):
         canvas = self.guardcanvas
         print 'blink',canvas,self.do_blink
-        while self.do_blink:
+        if self.do_blink:
             current_color = canvas.itemcget(house, "fill")
+            print 'current_color', current_color, type(current_color), house, house.isPanic, house.repeater
             new_color = "red" if current_color == "black" else "black"
             canvas.itemconfigure(house, fill=new_color)
-            time.sleep(0.5)
+            # time.sleep(0.5)
             # doBlinkThread = threading.Thread(target=lambda:self.blink(house))
-            # self.master.after(100, lambda:doBlinkThread.start())
+            self.master.after(1000, lambda: self.blink(house))
     
