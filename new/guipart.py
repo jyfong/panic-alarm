@@ -104,6 +104,10 @@ class GuiPart:
         for item in self.table:
             self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
 
+        row = self.tableConfig.find_one(type='map')
+        if row:
+            self.resizeImage(self.guardcanvas, row['map_width'], row['map_height'])
+
         self.checkPanic()
         
 
@@ -114,6 +118,7 @@ class GuiPart:
         self.tableUsers = db['users']
         self.tablePanic = db['panic']
         self.tableHistory = db['history']
+        self.tableConfig = db['config']
 
         self.tablePanic.create_column('time', sqlalchemy.Integer)
         self.tablePanic.create_column('repeater', sqlalchemy.String)
@@ -741,6 +746,7 @@ class GuiPart:
 
         canvas.image = ImageTk.PhotoImage(self.image)
         canvas.create_image(0, 0, image=canvas.image, anchor='nw')
+        self.tableConfig.upsert(dict(type='map', map_width=new_width, map_height=new_height), ['type'])
 
 
     def _on_press(self, event):
