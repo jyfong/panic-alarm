@@ -93,13 +93,15 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.mlb.delete(0,END)
         self.loadPendingAlarm()
         self.guipart.stop_blinking()
-        for h in self.houses:
+        for h in self.guipart.houses:
             h.isPanic = False
     
     def loadPendingAlarm(self):
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
-
+        if self.mlb.size() != 0:
+            self.mlb.delete(0, END)
         for item in pendingPanic:
+
             currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
             self.mlb.insert(END,(currentTime,item['name'],item['phone'],item['address']))
 

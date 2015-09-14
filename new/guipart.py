@@ -243,7 +243,7 @@ class GuiPart:
     def addUsers(self,master):
         login = LoginDialog(master)
         if login.result == 1:
-            adminPage = admin.AdminPage(master,self)
+            adminPage = admin.AdminPage(master, self)
 
 
 
@@ -282,6 +282,7 @@ class GuiPart:
     def panicAlarm(self, cmd, repeater):
         currentTime = time.time()
         self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
+        print currentTime, repeater
         self.checkPanic()
         
 
@@ -292,25 +293,26 @@ class GuiPart:
         self.start_blinking()
         for item in pendingPanic:
             house = self.findHouseByRepeater(item['repeater'])
-            # if house.isPanic == False:
-            #     house.isPanic = True
-            self.blink(house)
+            if house.isPanic == False:
+                house.isPanic = True
+                self.blink(house.item)
                 # self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
                 # self.doBlinkThread[item['repeater']].start()
 
-        # self.sosThread = threading.Thread(target=self.sos)
-        # self.sosThread.start()
+        self.sosThread = threading.Thread(target=self.sos)
+        self.sosThread.start()
 
-        # self.openPanicDlg()
+        self.openPanicDlg()
 
     def openPanicDlg(self):
+        print 'openpanic'
         if self.tablePanic.find_one(acknowledged="None"):
             if self.isOpenPanicDialog:
                 self.panicdlg.loadPendingAlarm()
             else:
-                self.panicdlg = PanicDialog(self.master,self)
+                self.panicdlg = PanicDialog(self.master,self, False)
+        self.master.after(20000, lambda:self.openPanicDlg())   
 
-        self.master.after(10000, lambda:self.openPanicDlg())   
 
 
     def on_exit(self):
@@ -787,15 +789,12 @@ class GuiPart:
 
         return -1
 
-    def blink(self, house):
+    def blink(self, item):
         canvas = self.guardcanvas
-        print 'blink',canvas,self.do_blink
+        # print 'blink',canvas,self.do_blink
+        current_color = canvas.itemcget(item, "fill")
+        new_color = "red" if current_color == "black" else "black"
+        canvas.itemconfigure(item, fill=new_color)
         if self.do_blink:
-            current_color = canvas.itemcget(house, "fill")
-            print 'current_color', current_color, type(current_color), house, house.isPanic, house.repeater
-            new_color = "red" if current_color == "black" else "black"
-            canvas.itemconfigure(house, fill=new_color)
-            # time.sleep(0.5)
-            # doBlinkThread = threading.Thread(target=lambda:self.blink(house))
-            self.master.after(1000, lambda: self.blink(house))
+            self.master.after(1000, lambda: self.blink(item))
     

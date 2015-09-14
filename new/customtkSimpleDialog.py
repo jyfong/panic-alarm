@@ -3,7 +3,7 @@ import os
 
 class Dialog(Toplevel):
 
-    def __init__(self, parent,guipart=None, title = None):
+    def __init__(self, parent,guipart=None, wait = True, title = None):
 
         Toplevel.__init__(self, parent)
         self.transient(parent)
@@ -34,7 +34,8 @@ class Dialog(Toplevel):
 
         self.initial_focus.focus_set()
 
-        self.wait_window(self)
+        if wait:
+            self.wait_window(self)
 
     #
     # construction hooks
