@@ -589,7 +589,7 @@ class GuiPart:
         self.mapWindow = mapWindow
         # mapWindow.attributes('-fullscreen', True)
         toplevel = mapWindow.winfo_toplevel()
-        toplevel.wm_state('zoomed')
+        # toplevel.wm_state('zoomed')
         
         
         mapWindow.bind('<Escape>',self.toggleFullScreen)
@@ -601,8 +601,9 @@ class GuiPart:
         mapWindowBottom.pack()
         # mapWindowBottom.bind('<Configure>', self.resizeImage)
 
-        self.admincanvas = Canvas(mapWindowBottom)
+        self.admincanvas = ResizingCanvas(mapWindowBottom,width=400, height=400, bg="grey")
         self.admincanvas.pack()
+        self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         self.mapWindow.protocol('WM_DELETE_WINDOW', self.closeInstallerMap)
 
@@ -610,8 +611,7 @@ class GuiPart:
         buttonwidth = 20
         b1 = Button(mapWindowTop,text="Upload" ,command=self.uploadImage , width=buttonwidth)
         b1.grid(row=0,column=0, sticky=W)
-        # b2 = Button(mapWindowTop,text="Ask Respond" , width=buttonwidth )
-        # b2.grid(row=0,column=1, sticky=W)
+
         try:
             # row = self.tableImage.all().next()
             # self.openImage(row["imageName"],self.admincanvas)
