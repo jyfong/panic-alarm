@@ -22,7 +22,6 @@ import multiListBox
 from guipart import GuiPart
 from dialog import LoginDialog, PanicDialog, ConfirmedPanicDialog
 
-state = 0 # for toggling fullscreen in mapWindow
 # connecting to a SQLite database
 db = dataset.connect('sqlite:///mydatabase.db')
 

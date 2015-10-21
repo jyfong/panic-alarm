@@ -28,6 +28,7 @@ from dialog import LoginDialog, PanicDialog, ConfirmedPanicDialog
 from point import Point, ResizingCanvas
 
 db = dataset.connect('sqlite:///mydatabase.db')
+state = 0 # for toggling fullscreen in mapWindow
 
 class GuiPart:
     def __init__(self, master, queue, endCommand, send):
@@ -603,7 +604,7 @@ class GuiPart:
 
         self.admincanvas = ResizingCanvas(mapWindowBottom,width=400, height=400, bg="grey")
         self.admincanvas.pack()
-        self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.admincanvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         self.mapWindow.protocol('WM_DELETE_WINDOW', self.closeInstallerMap)
 
