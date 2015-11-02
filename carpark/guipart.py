@@ -110,6 +110,7 @@ class GuiPart:
             self.resizeImage(self.guardcanvas, row['map_width'], row['map_height'])
 
         self.checkPanic()
+        self.updateGuardMap()
         
 
     def initDB(self):
@@ -275,9 +276,10 @@ class GuiPart:
         self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
 
     def onPointSelect(self, repeater):
-
+        print 'select', repeater
         for i in range(self.mlb.size()):
             if repeater == self.mlb.get(i)[0]:
+                print self.mlb.get(i)[0], i
                 self.mlb.selection_set(i)
 
     def sos(self): 
@@ -728,6 +730,7 @@ class GuiPart:
         # clear houses from canvas
         for h in reversed(self.houses):
             self.guardcanvas.delete(h.item)
+            self.guardcanvas.delete(h.text)
             self.houses.pop()
 
         # append houses to canvas
@@ -742,6 +745,8 @@ class GuiPart:
             self.openImage(self.guardcanvas)
 
         self.guardcanvas.tag_raise("house")
+        self.guardcanvas.tag_raise("label")
+
 
 
     def resizeImage(self, canvas, new_width, new_height):
@@ -775,15 +780,18 @@ class GuiPart:
         
         self.resizeImage(self.guardcanvas, new_width, new_height)
         self.guardcanvas.tag_raise("house")
+        self.guardcanvas.tag_raise("label")
 
         sw, sh = new_width / w, new_height / h
 
         for h in self.houses:
             item = h.item
-            self.transformPoint(item, sw, sh)
+            self.transformPoint(h, sw, sh)
 
     
-    def transformPoint(self, item, scalex, scaley):
+    def transformPoint(self, h, scalex, scaley):
+        item = h.item
+        text = h.text
         a, b, c, d = self.guardcanvas.coords(item)
         x, y = a+5, b+5
         mx, my = a*scalex-a, b*scaley-b
@@ -791,6 +799,7 @@ class GuiPart:
         self.y_error += my - round(my)
         import math
         self.guardcanvas.move(item, int(round(mx) + math.modf(self.x_error)[1]), int(round(my) + math.modf(self.y_error)[1]))
+        self.guardcanvas.move(text, int(round(mx) + math.modf(self.x_error)[1]), int(round(my) + math.modf(self.y_error)[1]))
         # print round(mx) + math.modf(self.x_error)[1]
         self.x_error = math.modf(self.x_error)[0]
         self.y_error = math.modf(self.y_error)[0]
