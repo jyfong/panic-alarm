@@ -93,6 +93,7 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.mlb.delete(0,END)
         self.loadPendingAlarm()
         self.guipart.stop_blinking()
+        self.guipart.disableAllAlarm()
         for h in self.guipart.houses:
             h.isPanic = False
     

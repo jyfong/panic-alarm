@@ -97,13 +97,13 @@ class GuiPart:
         self.openGuardMap(rightFrame)
 
         # Listbox for details
-        self.mlb = guardMultiListBox.MultiListbox(leftFrame, (('RepeaterID', 15), ('Name', 20), ('Address', 30)), self.selectedlistbox)
+        self.mlb = guardMultiListBox.MultiListbox(leftFrame, (('RepeaterID', 15), ('Name', 20)), self.selectedlistbox)
         # for i in range(1000):
         #     mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
         self.mlb.pack(expand=YES,fill=BOTH)
 
         for item in self.table:
-            self.mlb.insert(END, (item['repeater'], item['name'], item['address']))
+            self.mlb.insert(END, (item['repeater'], item['name']))
 
         row = self.tableConfig.find_one(type='map')
         if row:
@@ -239,7 +239,9 @@ class GuiPart:
 
 
     def start_blinking(self):
+        print "start blink"
         self.do_blink = True
+        print self.do_blink
         
 
     def stop_blinking(self):
@@ -269,7 +271,7 @@ class GuiPart:
     def selectedlistbox(self):
         print 'selected'
         repeaterID = self.mlb.get(self.mlb.curselection())[0]
-        self.guardcanvas.itemconfigure("house", fill="black")
+        self.guardcanvas.itemconfigure("house", fill="green")
         self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
 
     def onPointSelect(self, repeater):
@@ -283,7 +285,7 @@ class GuiPart:
             for i in range(0, 3): winsound.Beep(2000, 100) 
             for i in range(0, 3): winsound.Beep(2000, 400) 
             for i in range(0, 3): winsound.Beep(2000, 100)
-            time.sleep(0.5)
+            time.sleep(1)
 
     def panicAlarm(self, cmd, repeater):
         currentTime = time.time()
@@ -293,21 +295,23 @@ class GuiPart:
         
 
     def checkPanic(self):
-        
+        print 'checkpanic'
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
         # self.doBlinkThread = dict()
-        self.start_blinking()
+        
         for item in pendingPanic:
             house = self.findHouseByRepeater(item['repeater'])
             if house.isPanic == False:
                 house.isPanic = True
                 self.blink(house.item)
+                self.start_blinking()
                 # self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
                 # self.doBlinkThread[item['repeater']].start()
-
-        self.sosThread = threading.Thread(target=self.sos)
-        self.sosThread.start()
-
+        try:
+            self.sosThread = threading.Thread(target=self.sos)
+            self.sosThread.start()
+        except:
+            print "Fail to start thread.."
         self.openPanicDlg()
 
     def openPanicDlg(self):
@@ -367,26 +371,28 @@ class GuiPart:
             buttonwidth = 20
             self.b0 = Button(topFrame,text="Listen Mode" ,command=self.listenMode , width=buttonwidth)
             self.b0.grid(row=0,column=0, sticky=W)
-            b1 = Button(topFrame,text="Configure Central ID" ,command=self.configCentralId , width=buttonwidth)
-            b1.grid(row=0,column=1, sticky=W)
+            # b1 = Button(topFrame,text="Configure Central ID" ,command=self.configCentralId , width=buttonwidth)
+            # b1.grid(row=0,column=1, sticky=W)
             b2 = Button(topFrame,text="Ask Respond", command=self.askRespond , width=buttonwidth )
-            b2.grid(row=0,column=2, sticky=W)
-            b3 = Button(topFrame,text="Repeater Search Path", command=self.repeaterSearchPath , width=buttonwidth)
-            b3.grid(row=0,column=3, sticky=W)
-            b4 = Button(topFrame,text="All Repeater Search Path", command=self.allRepeaterSearchPath, width=buttonwidth )
-            b4.grid(row=0,column=4, sticky=W)
+            b2.grid(row=0,column=1, sticky=W)
+            # b3 = Button(topFrame,text="Repeater Search Path", command=self.repeaterSearchPath , width=buttonwidth)
+            # b3.grid(row=0,column=3, sticky=W)
+            # b4 = Button(topFrame,text="All Repeater Search Path", command=self.allRepeaterSearchPath, width=buttonwidth )
+            # b4.grid(row=0,column=4, sticky=W)
             
             # Second Row
-            b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking, width=buttonwidth )
-            b5.grid(row=1,column=0, sticky=W)
-            b6 = Button(topFrame,text="Check Repeater Central ID", command=self.repeaterCheckCentralID , width=buttonwidth)
-            b6.grid(row=1,column=1, sticky=W)
-            b7 = Button(topFrame,text="Check Repeater Path", command=self.repeaterCheckPath , width=buttonwidth)
-            b7.grid(row=1,column=2, sticky=W)
+            # b5 = Button(topFrame,text="Check Central ID", command=self.mcuIDChecking, width=buttonwidth )
+            # b5.grid(row=1,column=0, sticky=W)
+            # b6 = Button(topFrame,text="Check Repeater Central ID", command=self.repeaterCheckCentralID , width=buttonwidth)
+            # b6.grid(row=1,column=1, sticky=W)
+            # b7 = Button(topFrame,text="Check Repeater Path", command=self.repeaterCheckPath , width=buttonwidth)
+            # b7.grid(row=1,column=2, sticky=W)
+            b7 = Button(topFrame,text="Disable All Alarm", command=self.disableAllAlarm , width=buttonwidth)
+            b7.grid(row=1,column=0, sticky=W)
             b8 = Button(topFrame,text="Map", command=lambda:self.openMap() , width=buttonwidth)
-            b8.grid(row=1,column=3, sticky=W)
+            b8.grid(row=1,column=1, sticky=W)
             b9 = Button(topFrame,text="View Old Logs", command=self.openLog , width=buttonwidth)
-            b9.grid(row=1,column=4, sticky=W)
+            b9.grid(row=1,column=2, sticky=W)
 
             #Initialize variables for UI
             listbox_width = 40
@@ -404,16 +410,16 @@ class GuiPart:
             self.nameVar = StringVar()
             self.name = Entry(middleFrameRight, textvariable=self.nameVar)
             self.name.grid(row=1,column=0)
-            addressLabel = Label(middleFrameRight, text="Address")
-            addressLabel.grid(row=2, column=0)
-            self.addressVar = StringVar()
-            self.address = Entry(middleFrameRight, textvariable=self.addressVar)
-            self.address.grid(row=3,column=0)
-            phoneLabel = Label(middleFrameRight, text="Phone")
-            phoneLabel.grid(row=4, column=0)
-            self.phoneVar = StringVar()
-            self.phone = Entry(middleFrameRight, textvariable=self.phoneVar)
-            self.phone.grid(row=5,column=0)
+            # addressLabel = Label(middleFrameRight, text="Address")
+            # addressLabel.grid(row=2, column=0)
+            # self.addressVar = StringVar()
+            # self.address = Entry(middleFrameRight, textvariable=self.addressVar)
+            # self.address.grid(row=3,column=0)
+            # phoneLabel = Label(middleFrameRight, text="Phone")
+            # phoneLabel.grid(row=4, column=0)
+            # self.phoneVar = StringVar()
+            # self.phone = Entry(middleFrameRight, textvariable=self.phoneVar)
+            # self.phone.grid(row=5,column=0)
 
             
             # Middle Frame Buttons 
@@ -467,6 +473,10 @@ class GuiPart:
         del self.repeaterSearchPath
         self.send(b"ART00000000S000\r")
         self.logger("Asking all repeater to search path... Please wait for reply..\n")
+
+    def disableAllAlarm(self):
+        self.send(b"ART00000000K\r")
+        self.logger("Disabling All Alarm..\n")
 
     def mcuIDChecking(self):
         self.send(b"ARI\r")
@@ -737,7 +747,7 @@ class GuiPart:
 
 
     def resizeImage(self, canvas, new_width, new_height):
-        print 'image:', new_width, new_height
+        # print 'image:', new_width, new_height
         self.guardcanvas.config(xscrollcommand=self.hbar.set, yscrollcommand=self.vbar.set, scrollregion=(0, 0, new_width, new_height))
         
         self.hbar.config(command=self.guardcanvas.xview)
@@ -800,7 +810,7 @@ class GuiPart:
         canvas = self.guardcanvas
         # print 'blink',canvas,self.do_blink
         current_color = canvas.itemcget(item, "fill")
-        new_color = "red" if current_color == "black" else "black"
+        new_color = "red" if current_color == "green" else "green"
         canvas.itemconfigure(item, fill=new_color)
         if self.do_blink:
             self.master.after(1000, lambda: self.blink(item))
