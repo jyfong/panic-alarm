@@ -277,10 +277,12 @@ class GuiPart:
 
     def onPointSelect(self, repeater):
         print 'select', repeater
+        self.mlb.selection_clear(0, END)
         for i in range(self.mlb.size()):
             if repeater == self.mlb.get(i)[0]:
                 print self.mlb.get(i)[0], i
                 self.mlb.selection_set(i)
+                self.selectedlistbox()
 
     def sos(self): 
         while self.do_blink:
@@ -305,8 +307,8 @@ class GuiPart:
             house = self.findHouseByRepeater(item['repeater'])
             if house.isPanic == False:
                 house.isPanic = True
-                self.blink(house.item)
                 self.start_blinking()
+                self.blink(house.item)
                 # self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
                 # self.doBlinkThread[item['repeater']].start()
         try:
@@ -479,7 +481,6 @@ class GuiPart:
     def disableAllAlarm(self):
         self.send(b"ART00000000K\r")
         self.logger("Disabling All Alarm..\n")
-
     def mcuIDChecking(self):
         self.send(b"ARI\r")
         # msg = "Central ID=" + currentValue + " to respond...\n" 
@@ -819,6 +820,9 @@ class GuiPart:
         current_color = canvas.itemcget(item, "fill")
         new_color = "red" if current_color == "green" else "green"
         canvas.itemconfigure(item, fill=new_color)
+        print 'blink', current_color
         if self.do_blink:
             self.master.after(1000, lambda: self.blink(item))
+        else:
+            canvas.itemconfigure(item, fill='green')
     
