@@ -27,7 +27,7 @@ class Point:
         (x,y) = coord
         self.item = canvas.create_oval(x-5, y-5, x+20, y+20,
                                 outline=color, fill=color, tags="house")
-        self.text = canvas.create_text(x+0, y-15, text=repeater)
+        self.text = canvas.create_text(x+0, y-15, text=repeater, tags="house")
         self.repeater = repeater
         self.canvas = canvas
         self.table = table

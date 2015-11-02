@@ -296,7 +296,7 @@ class GuiPart:
 
     def checkPanic(self):
         print 'checkpanic'
-        pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name,repeater.address,repeater.phone FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
+        pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
         # self.doBlinkThread = dict()
         
         for item in pendingPanic:
@@ -520,7 +520,7 @@ class GuiPart:
 
     def updateEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())
-        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(),address=self.addressVar.get(),phone=self.phoneVar.get(), coordx=100, coordy=100), ['repeater'] )
+        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(), coordx=100, coordy=100), ['repeater'] )
 
     def deleteEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())
@@ -534,8 +534,6 @@ class GuiPart:
         repeaterID = self.l1.get(self.l1.curselection())
         row = self.table.find_one(repeater=repeaterID)
         self.nameVar.set(row['name'])
-        self.addressVar.set(row['address'])
-        self.phoneVar.set(row['phone'])
 
 
 
