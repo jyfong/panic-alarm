@@ -51,6 +51,8 @@ class GuiPart:
         self.do_blink = False
         self.isOpenPanicDialog = False
         self.panicdlg = None
+        self.lastpanic = None
+        self.lastpanictime = None
 
         # Add default admin user and password
         if self.tableUsers.count() == 0:
@@ -170,79 +172,87 @@ class GuiPart:
 
 
     def decode(self,b):
+        try:
 
-        m = re.match('.*RA(\w)(.{8})(.{2})?', b)
-        if m:
-            print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
+            m = re.match('.*RA(\w)(.{8})(.{2})?', b)
+            if m:
+                print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
 
-            cmd = m.group(1)
-            repeater = m.group(2)
-            RSSI = m.group(3)
+                cmd = m.group(1)
+                repeater = m.group(2)
+                RSSI = m.group(3)
 
 
-            if cmd == "I":
-                if self.listen == True:
+                if cmd == "I":
+                    if self.listen == True:
 
-                    msg = "Setting Repeater Central ID = " + repeater + "\n"
+                        msg = "Setting Repeater Central ID = " + repeater + "\n"
+                        self.logger(msg)
+                        if not self.table.find_one(repeater=repeater):
+                            self.l1.insert(END, repeater)
+                            self.table.insert(dict(repeater=repeater))
+
+                # elif not (self.centralId == repeater or self.table.find_one(repeater=repeater) or '00000000' == repeater):
+                #     print "Alien Discovered", repeater
+                #     return
+
+                elif cmd == 'A':
+                    msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
                     self.logger(msg)
-                    if not self.table.find_one(repeater=repeater):
-                        self.l1.insert(END, repeater)
-                        self.table.insert(dict(repeater=repeater))
+                elif cmd == "E":
+                    msg = "Repeater with ID = " + repeater + " has responded..\n"
+                    self.logger(msg)
+                elif cmd == "C":
+                    msg = "Repeater with ID = " + repeater + " has finished searching path..\n"
+                    self.logger(msg)
+                    
+                    if 'searchedPath' in dir(self):
+                        self.searchedPath.append(repeater)
+                        print self.searchedPath
+                        listofRepeaters = self.l1.get(0, END)
+                        diff = list(set(listofRepeaters) - set(self.searchedPath))
+                        for i in range(len(self.l1.get(0, END))):
+                            self.l1.itemconfig(i, {'bg' : 'green'})
+                        for repeater in diff:
+                            index = self.getIndexOfListbox(repeater)
+                            self.l1.itemconfig(index, {'bg':'red'})         
 
-            # elif not (self.centralId == repeater or self.table.find_one(repeater=repeater) or '00000000' == repeater):
-            #     print "Alien Discovered", repeater
-            #     return
+                    else:
+                        self.searchedPath = []
+                        self.searchedPath.append(repeater)
+                elif cmd == "F":
+                    msg = "Repeater central ID = " + repeater + " ..\n"
+                    self.logger(msg)
+                elif cmd == "P":
+                    if self.lastpanic == repeater and (time.time() - self.lastpanictime < 5):
+                        print 'droped panic', repeater
+                    else:
+                        self.lastpanic = repeater
+                        self.lastpanictime = time.time()
+                        msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
+                        self.logger(msg)
+                        # house.isPanic = True
+                        self.panicAlarm(cmd, repeater)
+                elif cmd == "J":
+                    msg = "Current Central ID= " + repeater + "..\n"
+                    self.logger(msg)
 
-            elif cmd == 'A':
-                msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
-                self.logger(msg)
-            elif cmd == "E":
-                msg = "Repeater with ID = " + repeater + " has responded..\n"
-                self.logger(msg)
-            elif cmd == "C":
-                msg = "Repeater with ID = " + repeater + " has finished searching path..\n"
-                self.logger(msg)
-                
-                if 'searchedPath' in dir(self):
-                    self.searchedPath.append(repeater)
-                    print self.searchedPath
-                    listofRepeaters = self.l1.get(0, END)
-                    diff = list(set(listofRepeaters) - set(self.searchedPath))
-                    for i in range(len(self.l1.get(0, END))):
-                        self.l1.itemconfig(i, {'bg' : 'green'})
-                    for repeater in diff:
-                        index = self.getIndexOfListbox(repeater)
-                        self.l1.itemconfig(index, {'bg':'red'})         
-
-                else:
-                    self.searchedPath = []
-                    self.searchedPath.append(repeater)
-            elif cmd == "F":
-                msg = "Repeater central ID = " + repeater + " ..\n"
-                self.logger(msg)
-            elif cmd == "P":
-                msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
-                self.logger(msg)
-                # house.isPanic = True
-                self.panicAlarm(cmd, repeater)
-            elif cmd == "J":
-                msg = "Current Central ID= " + repeater + "..\n"
-                self.logger(msg)
-
-            elif int(cmd) in range(1,4):
-                msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
-                self.logger(msg)
+                # elif int(cmd) in range(1,4):
+                #     msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
+                #     self.logger(msg)
 
 
-        else:
-            print 'Cant decode', b
+            else:
+                print 'Cant decode', b
+        except e:
+            print e
 
 
 
     def start_blinking(self):
-        print "start blink"
+        # print "start blink"
         self.do_blink = True
-        print self.do_blink
+        # print self.do_blink
         
 
     def stop_blinking(self):
@@ -270,17 +280,17 @@ class GuiPart:
 
    
     def selectedlistbox(self):
-        print 'selected'
+        # print 'selected'
         repeaterID = self.mlb.get(self.mlb.curselection())[0]
         self.guardcanvas.itemconfigure("house", fill="green")
         self.guardcanvas.itemconfigure(self.findHouseByRepeater(repeaterID).item, fill="yellow")
 
     def onPointSelect(self, repeater):
-        print 'select', repeater
+        # print 'select', repeater
         self.mlb.selection_clear(0, END)
         for i in range(self.mlb.size()):
             if repeater == self.mlb.get(i)[0]:
-                print self.mlb.get(i)[0], i
+                # print self.mlb.get(i)[0], i
                 self.mlb.selection_set(i)
                 self.selectedlistbox()
 
@@ -299,7 +309,7 @@ class GuiPart:
         
 
     def checkPanic(self):
-        print 'checkpanic'
+        # print 'checkpanic'
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
         # self.doBlinkThread = dict()
         
@@ -319,7 +329,7 @@ class GuiPart:
         self.openPanicDlg()
 
     def openPanicDlg(self):
-        print 'openpanic'
+        # print 'openpanic'
         if self.tablePanic.find_one(acknowledged="None"):
             if self.isOpenPanicDialog:
                 self.panicdlg.loadPendingAlarm()
@@ -765,7 +775,8 @@ class GuiPart:
 
 
     def _on_press(self, event):
-        print 'click:', event.x, event.y
+        # print 'click:', event.x, event.y
+        pass
 
     def _on_mousewheel(self, event):
         scale = 1 + (0.10 *(event.delta/120))
@@ -820,7 +831,7 @@ class GuiPart:
         current_color = canvas.itemcget(item, "fill")
         new_color = "red" if current_color == "green" else "green"
         canvas.itemconfigure(item, fill=new_color)
-        print 'blink', current_color
+        # print 'blink', current_color
         if self.do_blink:
             self.master.after(1000, lambda: self.blink(item))
         else:
