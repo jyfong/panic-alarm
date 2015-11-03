@@ -69,7 +69,7 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
         self.btmFrame.grid(row=1, sticky=N+S+E+W)
 
-        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20), ('Phone', 20), ('Address', 30)))
+        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20)))
         self.mlb.grid(row=0, sticky=N+S+E+W)
 
         self.loadPendingAlarm()
@@ -78,6 +78,7 @@ class PanicDialog(customtkSimpleDialog.Dialog):
         self.button_1.grid(row=0,column=0, sticky=N+S+E+W)
 
         self.guipart.isOpenPanicDialog = True
+
 
     def canceled(self):
         pass
@@ -118,7 +119,7 @@ class ConfirmedPanicDialog(customtkSimpleDialog.Dialog):
         self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
         self.btmFrame.grid(row=1, sticky=N+S+E+W)
 
-        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20), ('Phone', 20), ('Address', 30),('Acknowledged by',20)))
+        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Time', 20),('Name', 20),('Acknowledged by',20)))
         self.mlb.grid(row=0, sticky=N+S+E+W)
 
         self.loadConfirmedAlarm()
@@ -131,7 +132,7 @@ class ConfirmedPanicDialog(customtkSimpleDialog.Dialog):
 
         for item in pendingPanic:
             currentTime = time.strftime("%y/%m/%d %H:%M", time.localtime(item['time']))
-            self.mlb.insert(END,(currentTime,item['name'],item['phone'],item['address'],item['acknowledged']))
+            self.mlb.insert(END,(currentTime,item['name'],item['acknowledged']))
 
     def closed(self):
         pass

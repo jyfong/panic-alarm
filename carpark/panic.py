@@ -105,14 +105,15 @@ class ThreadedClient:
                     buffer = ''
                     
         except:
-            print 'Closed', sys.exc_info()[0]
-
-            self.d.close()
+            print 'Closed', sys.exc_info()
+            self.running = 0
+            # self.d.close()
 
     def endApplication(self):
         self.running = 0
         try:
-            self.d.close()
+            # self.d.close()
+            pass
         except:
             print "Can't disconnect device."
 
