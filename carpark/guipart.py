@@ -111,8 +111,9 @@ class GuiPart:
         if row:
             self.resizeImage(self.guardcanvas, row['map_width'], row['map_height'])
 
-        self.checkPanic()
+        
         self.updateGuardMap()
+        self.checkPanic()
         
 
     def initDB(self):
