@@ -616,7 +616,8 @@ class GuiPart:
         # mapWindow.attributes('-fullscreen', True)
         toplevel = mapWindow.winfo_toplevel()
         # toplevel.wm_state('zoomed')
-        mapWindow.geometry("+0+0")
+        w, h = self.master.winfo_screenwidth(), self.master.winfo_screenheight()
+        mapWindow.geometry("%dx%d+0+0" % (w, h))
         
         mapWindow.bind('<Escape>',self.toggleFullScreen)
 
@@ -671,7 +672,7 @@ class GuiPart:
         # Put the image into a canvas compatible class, and stick in an
         # arbitrary variable to the garbage collector doesn't destroy it
         canvas.image = ImageTk.PhotoImage(self.image)
-        canvas.create_image(0, 0, image=canvas.image, anchor='nw', tags="map")
+        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
 
     def uploadImage(self):
         self.tablePicture.drop()
