@@ -616,7 +616,7 @@ class GuiPart:
         # mapWindow.attributes('-fullscreen', True)
         toplevel = mapWindow.winfo_toplevel()
         # toplevel.wm_state('zoomed')
-        
+        mapWindow.geometry("+0+0")
         
         mapWindow.bind('<Escape>',self.toggleFullScreen)
 
