@@ -71,6 +71,9 @@ class Point:
         '''Handle dragging of an object'''
         # compute how much this object has moved
         if self.movable:
+            # print self.canvas.gettags(self._drag_data["item"])[0]
+            if self.canvas.gettags(self._drag_data["item"])[0] == 'map':
+                return
             delta_x = event.x - self._drag_data["x"]
             delta_y = event.y - self._drag_data["y"]
             # move the object the appropriate amount
