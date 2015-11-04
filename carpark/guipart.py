@@ -104,17 +104,21 @@ class GuiPart:
         #     mlb.insert(END, ('Important Message: %d' % i, 'John Doe', '10/10/%04d' % (1900+i)))
         self.mlb.pack(expand=YES,fill=BOTH)
 
-        for item in self.table:
-            self.mlb.insert(END, (item['repeater'], item['name']))
+
 
         row = self.tableConfig.find_one(type='map')
         if row:
             self.resizeImage(self.guardcanvas, row['map_width'], row['map_height'])
 
-        
+        self.updateMLB()
         self.updateGuardMap()
         self.checkPanic()
         
+    def updateMLB(self):
+        self.mlb .delete(0,END)
+
+        for item in self.table:
+            self.mlb.insert(END, (item['repeater'], item['name']))  
 
     def initDB(self):
         self.table = db['repeater']
@@ -379,8 +383,6 @@ class GuiPart:
             bottomFrame = LabelFrame(self.addDevicesWindow,text="Event Log", padx= 5 , pady= 5 )
             bottomFrame.pack(side=BOTTOM,fill=BOTH, expand=1)    
             # Init a frame for whole window
-            
-
 
             # Top Frame Buttons
             buttonwidth = 20
@@ -455,7 +457,7 @@ class GuiPart:
             clearlog_button = Button(bottomFrame,text="Clear log", command=self.clearLogger )
             clearlog_button.grid(row=1,column=0, sticky=W)
 
-            self.addDevicesWindow.protocol('WM_DELETE_WINDOW', self.closeAddDevices)
+            self.addDevicesWindow.protocol('WM_DELETE_WINDOW', self.closeAddDevicesWindow)
 
             for repeater in self.table:
                 self.l1.insert(END, repeater['repeater'])
@@ -559,10 +561,11 @@ class GuiPart:
             self.b0.config(relief=RAISED) 
 
 
-    def closeAddDevices(self):
+    def closeAddDevicesWindow(self):
         del self.log
+        self.updateGuardMap()
+        self.updateMLB()
         self.addDevicesWindow.destroy()
-
 
 
 ############################################### LOG ####################################################
@@ -623,9 +626,16 @@ class GuiPart:
         mapWindowBottom = Frame(mapWindow)
         mapWindowBottom.pack()
         # mapWindowBottom.bind('<Configure>', self.resizeImage)
-
+        
+        vbar = Scrollbar(mapWindowTop, orient=VERTICAL)
+        hbar = Scrollbar(mapWindowTop, orient=HORIZONTAL)
         self.admincanvas = ResizingCanvas(mapWindowBottom,width=400, height=400, bg="grey")
-        self.admincanvas.pack()
+        self.admincanvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set, scrollregion=(0, 0, 2480 , 2480))
+        self.admincanvas.pack(side=LEFT)
+        vbar.pack(side=LEFT,fill=Y)
+        vbar.config( command = self.admincanvas.yview)
+        hbar.pack(side=LEFT,fill=X)
+        hbar.config( command = self.admincanvas.xview)
         self.admincanvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         self.mapWindow.protocol('WM_DELETE_WINDOW', self.closeInstallerMap)
@@ -633,7 +643,7 @@ class GuiPart:
         # Buttons for map window
         buttonwidth = 20
         b1 = Button(mapWindowTop,text="Upload" ,command=self.uploadImage , width=buttonwidth)
-        b1.grid(row=0,column=0, sticky=W)
+        b1.pack(side=LEFT)
 
         try:
             # row = self.tableImage.all().next()
@@ -649,6 +659,7 @@ class GuiPart:
     def closeInstallerMap(self):
         self.mapWindow.destroy()
         self.updateGuardMap()
+        self.updateMLB()
 
 
     def openImage(self, canvas):
