@@ -18,6 +18,7 @@ import customtkSimpleDialog
 import admin
 import guardMultiListBox
 import multiListBox
+from pygame import mixer
 
 import sqlalchemy
 import sqlite3
@@ -53,6 +54,10 @@ class GuiPart:
         self.panicdlg = None
         self.lastpanic = None
         self.lastpanictime = None
+
+
+        mixer.init()
+        mixer.music.load('siren.mp3')
 
         # Add default admin user and password
         if self.tableUsers.count() == 0:
@@ -113,6 +118,7 @@ class GuiPart:
         self.updateMLB()
         self.updateGuardMap()
         self.checkPanic()
+
         
     def updateMLB(self):
         self.mlb .delete(0,END)
@@ -261,6 +267,7 @@ class GuiPart:
         
 
     def stop_blinking(self):
+        mixer.music.stop()
         self.do_blink = False
 
     # admin page
@@ -301,10 +308,12 @@ class GuiPart:
 
     def sos(self): 
         while self.do_blink:
-            for i in range(0, 3): winsound.Beep(2000, 100) 
-            for i in range(0, 3): winsound.Beep(2000, 400) 
-            for i in range(0, 3): winsound.Beep(2000, 100)
-            time.sleep(1)
+        #     for i in range(0, 3): winsound.Beep(2500, 100) 
+        #     for i in range(0, 3): winsound.Beep(2500, 100) 
+        #     for i in range(0, 3): winsound.Beep(2500, 100)
+            
+            mixer.music.play()
+            time.sleep(3)
 
     def panicAlarm(self, cmd, repeater):
         currentTime = time.time()
@@ -730,7 +739,7 @@ class GuiPart:
 
     def openGuardMap(self, rightFrame):
 
-        # Uneditable Map
+        # Uneditable Mapbeep
         self.guardcanvas = ResizingCanvas(rightFrame,width=400, height=400, bg="grey")
         self.guardcanvas.pack()
         self.guardcanvas.bind_all("<MouseWheel>", self._on_mousewheel)
