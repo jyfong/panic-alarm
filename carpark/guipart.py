@@ -308,9 +308,9 @@ class GuiPart:
 
     def sos(self): 
         while self.do_blink:
-        #     for i in range(0, 3): winsound.Beep(2500, 100) 
-        #     for i in range(0, 3): winsound.Beep(2500, 100) 
-        #     for i in range(0, 3): winsound.Beep(2500, 100)
+            for i in range(0, 3): winsound.Beep(2500, 100) 
+            for i in range(0, 3): winsound.Beep(2500, 100) 
+            for i in range(0, 3): winsound.Beep(2500, 100)
             
             mixer.music.play()
             time.sleep(3)
