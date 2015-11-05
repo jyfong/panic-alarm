@@ -133,6 +133,8 @@ class AdminPage:
         b11.grid(row=7,column=0, sticky=W)
         b12 = Button(self.editlistboxFrame,text="Map", command=guipart.openMap , width=20)
         b12.grid(row=8,column=0, sticky=W)
+        b12 = Button(self.editlistboxFrame,text="View Logs", command=guipart.openLog , width=20)
+        b12.grid(row=9,column=0, sticky=W)
 
         # load stuff
         self.loadGuards()

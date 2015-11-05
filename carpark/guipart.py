@@ -174,8 +174,9 @@ class GuiPart:
                 # Check contents of message and do what it says
                 # As a test, we simply print it
                 if msg == "exit":
-                    if tkMessageBox.showerror("Device Not Found!", "Please connect Central Device .."):
-                        os._exit(0)
+                    self.deviceError()
+                if msg == "error":
+                    self.deviceError()
                 else:
                     self.decode(msg)
             except Queue.Empty:
@@ -258,6 +259,17 @@ class GuiPart:
         except e:
             print e
 
+    def deviceError(self):
+        self.logger("Device disconnected..\n")
+        try:
+            self.sosThread = threading.Thread(target=lambda:self.sos(True))
+            self.sosThread.start()
+        except:
+            print "Fail to start thread.."
+
+        if tkMessageBox.showerror("Device Not Found!", "Please reconnect Central Device .."):
+            python = sys.executable
+            os.execl(python, python, * sys.argv)
 
 
     def start_blinking(self):
@@ -275,10 +287,6 @@ class GuiPart:
         login = LoginDialog(master)
         if login.result == 1:
             adminPage = admin.AdminPage(master, self)
-
-
-
-
 
 
     def logger(self, msg):
@@ -306,8 +314,8 @@ class GuiPart:
                 self.mlb.selection_set(i)
                 self.selectedlistbox()
 
-    def sos(self): 
-        while self.do_blink:
+    def sos(self,warning=False): 
+        while self.do_blink or warning:
         #     for i in range(0, 3): winsound.Beep(2500, 100) 
         #     for i in range(0, 3): winsound.Beep(2500, 100) 
         #     for i in range(0, 3): winsound.Beep(2500, 100)

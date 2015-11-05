@@ -105,9 +105,9 @@ class ThreadedClient:
                     buffer = ''
                     
         except:
+            self.queue.put("error")
             print 'Closed', sys.exc_info()
-            self.running = 0
-            # self.d.close()
+            
 
     def endApplication(self):
         self.running = 0
@@ -115,7 +115,7 @@ class ThreadedClient:
             # self.d.close()
             pass
         except:
-            print "Can't disconnect device."
+            print "Can't shutdown application."
 
     def send(self, cmd):
         print "Sending : Bytes sent-", self.d.write(cmd),"Command -", cmd
