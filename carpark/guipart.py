@@ -25,7 +25,7 @@ import sqlite3
 import os.path
 from os import listdir, getcwd
 
-from dialog import LoginDialog, PanicDialog, ConfirmedPanicDialog
+from dialog import LoginDialog, PanicDialog, ConfirmedPanicDialog, HealthSignalDialog
 from point import Point, ResizingCanvas
 
 db = dataset.connect('sqlite:///mydatabase.db')
@@ -82,6 +82,7 @@ class GuiPart:
         # view 
         menubar.add_command(label="New Alarms",command=lambda:PanicDialog(master,self))
         menubar.add_command(label="All Alarms",command=lambda:ConfirmedPanicDialog(master))
+        menubar.add_command(label="Health Signal",command=lambda:HealthSignalDialog(master))
         # display the menu
         master.config(menu=menubar)
 
@@ -147,6 +148,7 @@ class GuiPart:
         self.table.create_column('name', sqlalchemy.String)
         self.table.create_column('address', sqlalchemy.String)
         self.table.create_column('phone', sqlalchemy.String)
+        self.table.create_column('lastHealthSignal', sqlalchemy.Integer)
         self.initPictureTable()
 
     def initPictureTable(self):
@@ -248,6 +250,10 @@ class GuiPart:
                 elif cmd == "J":
                     msg = "Current Central ID= " + repeater + "..\n"
                     self.logger(msg)
+                elif cmd == "R":
+                    msg = "Health signal from " + repeater + " received..\n"
+                    self.logger(msg)
+                    self.table.upsert(dict(repeater=repeater,lastHealthSignal=time.time()),['repeater'])
 
                 # elif int(cmd) in range(1,4):
                 #     msg = "Repeater path " + cmd + " = " + repeater + " ..\n"

@@ -136,3 +136,33 @@ class ConfirmedPanicDialog(customtkSimpleDialog.Dialog):
 
     def closed(self):
         pass
+
+class HealthSignalDialog(customtkSimpleDialog.Dialog):
+
+    def body(self,master,guipart):
+        self.repeater = db['repeater']
+        self.topFrame = LabelFrame(master, text="Health Signal", padx = 10 , pady = 10)
+        self.topFrame.grid(row=0, sticky=N+S+E+W)
+        self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
+        self.btmFrame.grid(row=1, sticky=N+S+E+W)
+
+        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Repeater', 20),('Name', 20),('Last Health Signal',20)))
+        self.mlb.grid(row=0, sticky=N+S+E+W)
+
+        self.loadHealthSignal()
+
+    def canceled(self):
+        pass
+
+    def loadHealthSignal(self):
+        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater')
+
+        for item in repeaters:
+            if item['lastHealthSignal']:
+                lastHealthSignal = time.strftime("%y/%m/%d %H:%M", time.localtime(item['lastHealthSignal']))
+            else:
+                lastHealthSignal = "None"
+            self.mlb.insert(END,(item['repeater'],item['name'],lastHealthSignal))
+
+    def closed(self):
+        pass
