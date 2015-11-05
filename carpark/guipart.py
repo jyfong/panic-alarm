@@ -18,6 +18,7 @@ import customtkSimpleDialog
 import admin
 import guardMultiListBox
 import multiListBox
+import schedule
 from pygame import mixer
 
 import sqlalchemy
@@ -25,7 +26,7 @@ import sqlite3
 import os.path
 from os import listdir, getcwd
 
-from dialog import LoginDialog, PanicDialog, ConfirmedPanicDialog, HealthSignalDialog
+from dialog import LoginDialog, PanicDialog, ConfirmedPanicDialog, HealthSignalDialog, healthSignalFailDialog
 from point import Point, ResizingCanvas
 
 db = dataset.connect('sqlite:///mydatabase.db')
@@ -55,6 +56,9 @@ class GuiPart:
         self.lastpanic = None
         self.lastpanictime = None
 
+        healthData = self.tableConfig.find_one(type="signal")
+        # schedule.every().day.at(healthData['healthSignalCheckTime']).do(self.job)
+        schedule.every(1).minutes.do(self.job)
 
         mixer.init()
         mixer.music.load('siren.mp3')
@@ -119,10 +123,19 @@ class GuiPart:
         self.updateMLB()
         self.updateGuardMap()
         self.checkPanic()
+        self.checkHealthSignal()
+
+    def job(self):
+        print 'job'
+        currentTime = time.time()
+        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 1*60*60')
+
+        if repeaters:
+            healthSignalFail = healthSignalFailDialog(self.master,self)
 
         
     def updateMLB(self):
-        self.mlb .delete(0,END)
+        self.mlb.delete(0,END)
 
         for item in self.table:
             self.mlb.insert(END, (item['repeater'], item['name']))  
@@ -186,84 +199,81 @@ class GuiPart:
 
 
     def decode(self,b):
-        try:
 
-            m = re.match('.*RA(\w)(.{8})(.{2})?', b)
-            if m:
-                print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
+        m = re.match('.*RA(\w)(.{8})(.{2})?', b)
+        if m:
+            print m.group(0),'Cmd:', m.group(1), 'Repeater:', m.group(2), 'RSSI: -', m.group(3)
 
-                cmd = m.group(1)
-                repeater = m.group(2)
-                RSSI = m.group(3)
+            cmd = m.group(1)
+            repeater = m.group(2)
+            RSSI = m.group(3)
 
 
-                if cmd == "I":
-                    if self.listen == True:
+            if cmd == "I":
+                if self.listen == True:
 
-                        msg = "Setting Repeater Central ID = " + repeater + "\n"
-                        self.logger(msg)
-                        if not self.table.find_one(repeater=repeater):
-                            self.l1.insert(END, repeater)
-                            self.table.insert(dict(repeater=repeater))
-
-                # elif not (self.centralId == repeater or self.table.find_one(repeater=repeater) or '00000000' == repeater):
-                #     print "Alien Discovered", repeater
-                #     return
-
-                elif cmd == 'A':
-                    msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
+                    msg = "Setting Repeater Central ID = " + repeater + "\n"
                     self.logger(msg)
-                elif cmd == "E":
-                    msg = "Repeater with ID = " + repeater + " has responded..\n"
-                    self.logger(msg)
-                elif cmd == "C":
-                    msg = "Repeater with ID = " + repeater + " has finished searching path..\n"
-                    self.logger(msg)
-                    
-                    if 'searchedPath' in dir(self):
-                        self.searchedPath.append(repeater)
-                        print self.searchedPath
-                        listofRepeaters = self.l1.get(0, END)
-                        diff = list(set(listofRepeaters) - set(self.searchedPath))
-                        for i in range(len(self.l1.get(0, END))):
-                            self.l1.itemconfig(i, {'bg' : 'green'})
-                        for repeater in diff:
-                            index = self.getIndexOfListbox(repeater)
-                            self.l1.itemconfig(index, {'bg':'red'})         
+                    if not self.table.find_one(repeater=repeater):
+                        self.l1.insert(END, repeater)
+                        self.table.insert(dict(repeater=repeater))
 
-                    else:
-                        self.searchedPath = []
-                        self.searchedPath.append(repeater)
-                elif cmd == "F":
-                    msg = "Repeater central ID = " + repeater + " ..\n"
-                    self.logger(msg)
-                elif cmd == "P":
-                    if self.lastpanic == repeater and (time.time() - self.lastpanictime < 5):
-                        print 'droped panic', repeater
-                    else:
-                        self.lastpanic = repeater
-                        self.lastpanictime = time.time()
-                        msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
-                        self.logger(msg)
-                        # house.isPanic = True
-                        self.panicAlarm(cmd, repeater)
-                elif cmd == "J":
-                    msg = "Current Central ID= " + repeater + "..\n"
-                    self.logger(msg)
-                elif cmd == "R":
-                    msg = "Health signal from " + repeater + " received..\n"
-                    self.logger(msg)
-                    self.table.upsert(dict(repeater=repeater,lastHealthSignal=time.time()),['repeater'])
+            # elif not (self.centralId == repeater or self.table.find_one(repeater=repeater) or '00000000' == repeater):
+            #     print "Alien Discovered", repeater
+            #     return
 
-                # elif int(cmd) in range(1,4):
-                #     msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
-                #     self.logger(msg)
+            elif cmd == 'A':
+                msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
+                self.logger(msg)
+            elif cmd == "E":
+                msg = "Repeater with ID = " + repeater + " has responded..\n"
+                self.logger(msg)
+            elif cmd == "C":
+                msg = "Repeater with ID = " + repeater + " has finished searching path..\n"
+                self.logger(msg)
+                
+                if 'searchedPath' in dir(self):
+                    self.searchedPath.append(repeater)
+                    print self.searchedPath
+                    listofRepeaters = self.l1.get(0, END)
+                    diff = list(set(listofRepeaters) - set(self.searchedPath))
+                    for i in range(len(self.l1.get(0, END))):
+                        self.l1.itemconfig(i, {'bg' : 'green'})
+                    for repeater in diff:
+                        index = self.getIndexOfListbox(repeater)
+                        self.l1.itemconfig(index, {'bg':'red'})         
+
+                else:
+                    self.searchedPath = []
+                    self.searchedPath.append(repeater)
+            elif cmd == "F":
+                msg = "Repeater central ID = " + repeater + " ..\n"
+                self.logger(msg)
+            elif cmd == "P":
+                if self.lastpanic == repeater and (time.time() - self.lastpanictime < 5):
+                    print 'droped panic', repeater
+                else:
+                    self.lastpanic = repeater
+                    self.lastpanictime = time.time()
+                    msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
+                    self.logger(msg)
+                    # house.isPanic = True
+                    self.panicAlarm(cmd, repeater)
+            elif cmd == "J":
+                msg = "Current Central ID= " + repeater + "..\n"
+                self.logger(msg)
+            elif cmd == "R":
+                msg = "Health signal from " + repeater + " received..\n"
+                self.logger(msg)
+                self.table.upsert(dict(repeater=repeater,lastHealthSignal=time.time()),['repeater'])
+
+            # elif int(cmd) in range(1,4):
+            #     msg = "Repeater path " + cmd + " = " + repeater + " ..\n"
+            #     self.logger(msg)
 
 
-            else:
-                print 'Cant decode', b
-        except e:
-            print e
+        else:
+            print 'Cant decode', b
 
     def deviceError(self):
         self.logger("Device disconnected..\n")
@@ -365,7 +375,9 @@ class GuiPart:
                 self.panicdlg = PanicDialog(self.master,self, False)
         self.master.after(20000, lambda:self.openPanicDlg())   
 
-
+    def checkHealthSignal(self):
+        schedule.run_pending()
+        self.master.after(20000, lambda:self.checkHealthSignal()) 
 
     def on_exit(self):
         """When you click to exit, this function is called"""

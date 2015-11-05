@@ -16,6 +16,7 @@ class AdminPage:
     def __init__(self, master, guipart):
         self.tableUsers = db['users']
         self.table = db['repeater']
+        self.tableConfig = db['config']
     	# GUI INITIALIZATION
         self.master = master
         listbox_width = 40
@@ -126,24 +127,35 @@ class AdminPage:
         # self.phoneVar = StringVar()
         # self.phone = Entry(self.editlistboxFrame, textvariable=self.phoneVar)
         # self.phone.grid(row=5,column=0)
-
+        healthLabel = Label(self.editlistboxFrame, text="Health Signal Prompt Time")
+        healthLabel.grid(row=2, column=0)
+        self.healthTime = StringVar()
+        healthSignal = Entry(self.editlistboxFrame, textvariable=self.healthTime)
+        healthSignal.grid(row=3,column=0)
+        healthLabel2 = Label(self.editlistboxFrame, text="(Ex: 00:00-23:00)")
+        healthLabel2.grid(row=3, column=1)
         b10 = Button(self.editlistboxFrame,text="Update", command=self.updateEntry , width=20)
         b10.grid(row=6,column=0, sticky=W)
         b11 = Button(self.editlistboxFrame,text="Delete", command=self.deleteEntry , width=20)
         b11.grid(row=7,column=0, sticky=W)
         b12 = Button(self.editlistboxFrame,text="Map", command=guipart.openMap , width=20)
         b12.grid(row=8,column=0, sticky=W)
-        b12 = Button(self.editlistboxFrame,text="View Logs", command=guipart.openLog , width=20)
-        b12.grid(row=9,column=0, sticky=W)
+        b13 = Button(self.editlistboxFrame,text="View Logs", command=guipart.openLog , width=20)
+        b13.grid(row=9,column=0, sticky=W)
 
         # load stuff
         self.loadGuards()
         self.mlb.selection_set(0)
 
+        
+
         for repeater in self.table:
             self.l1.insert(END, repeater['repeater']+'/'+ repeater['name'])
         self.l1.select_set(0)
+        self.loadEntry('init')
 
+        healthData = self.tableConfig.find_one(type="signal")
+        self.healthTime.set(healthData['healthSignalCheckTime'])
 
     def changeAdminPassword(self):
         oldpass = str(self.entry_4.get())
@@ -191,6 +203,7 @@ class AdminPage:
     def updateEntry(self):
         repeaterID = self.l1.get(self.l1.curselection()).partition('/')[0]
         self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(), coordx=100, coordy=100), ['repeater'] )
+        self.tableConfig.upsert(dict(type="signal",healthSignalCheckTime=self.healthTime.get()),['type'])
 
     def deleteEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())

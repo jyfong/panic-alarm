@@ -166,3 +166,38 @@ class HealthSignalDialog(customtkSimpleDialog.Dialog):
 
     def closed(self):
         pass
+
+class healthSignalFailDialog(customtkSimpleDialog.Dialog):
+
+    def body(self,master,guipart):
+        self.guipart = guipart
+        self.topFrame = LabelFrame(master, text="Health Signal Fail", padx = 10 , pady = 10)
+        self.topFrame.grid(row=0, sticky=N+S+E+W)
+        self.btmFrame = LabelFrame(master, text="Action", padx = 10 , pady = 10)
+        self.btmFrame.grid(row=1, sticky=N+S+E+W)
+
+        self.mlb = multiListBox.MultiListbox(self.topFrame, (('Repeater', 20),('Name', 20),('Last Health Signal',20)))
+        self.mlb.grid(row=0, sticky=N+S+E+W)
+
+        self.loadFailedHealthSignal()
+
+    def canceled(self):
+        print 'press cancel'
+        pass
+
+    def loadFailedHealthSignal(self):
+        print 'loadFailedHealthSignal'
+        currentTime = time.time()
+        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 1*60*60')
+
+        for item in repeaters:
+            lastHealthSignal = time.strftime("%y/%m/%d %H:%M", time.localtime(item['lastHealthSignal']))
+            self.mlb.insert(END,(item['repeater'],item['name'],lastHealthSignal))
+
+    def apply(self):
+        login = LoginDialog(self.master)
+        if login.result == 1:
+            self.guipart.logger('test')
+
+    def closed(self):
+        pass
