@@ -38,6 +38,15 @@ class ThreadedClient:
         (original) thread of the application, which will later be used by
         the GUI. We spawn a new thread for the worker.
         """
+        try:
+            d = d2xx.open(0)
+            d.purge(0)
+            d.purge(1)
+            d.resetPort()
+            d.close()
+        except:
+            print 'resetport'
+
         self.master = master
 
         # Create the queue
