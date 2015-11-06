@@ -29,23 +29,23 @@ class AdminPage:
 
         # view 
         menubar.add_command(label="Backup Database",command=lambda:self.dbOperation("backup"))
-        menubar.add_command(label="Purge Database",command=lambda:self.dbOperation("purge"))
+        menubar.add_command(label="Purge Old Logs",command=lambda:self.dbOperation("purge"))
         menubar.add_command(label="Restore Database",command=lambda:self.dbOperation("restore"))
-
+        menubar.add_command(label="Disable All Alarm",command=guipart.disableAllAlarm)
         # display the menu
         self.adminWindow.config(menu=menubar)
 
         self.leftFrame = LabelFrame(self.adminWindow, text="Guard Info", padx = 10 , pady = 10)
         self.rightFrame = LabelFrame(self.adminWindow, text="Guard List", padx = 10 , pady = 10)
         self.btmFrame = LabelFrame(self.adminWindow, text="Change Admin Password" , padx = 10, pady= 10)
-        self.listboxFrame = LabelFrame(self.adminWindow, text="House Details" , padx = 10, pady= 10)
-        self.editlistboxFrame = LabelFrame(self.adminWindow, text="Edit House Details" , padx = 10, pady= 10)
+        self.listboxFrame = LabelFrame(self.adminWindow, text="Panic Button Details" , padx = 10, pady= 10)
+        self.editlistboxFrame = LabelFrame(self.adminWindow, text="Edit Panic Button Details" , padx = 10, pady= 10)
 
         self.leftFrame.grid(row=0,column=0, sticky=N+S+E+W)
         self.rightFrame.grid(row=0,column=1 ,sticky=E,rowspan=2)
        	self.btmFrame.grid(row=1,column=0 ,sticky=N+S+E+W)
-        self.listboxFrame.grid(row=2,column=0 ,sticky=N+S+E+W)
-        self.editlistboxFrame.grid(row=2,column=1 ,sticky=N+S+E+W)
+        self.listboxFrame.grid(row=2,column=1 ,sticky=N+S+E+W)
+        self.editlistboxFrame.grid(row=2,column=0 ,sticky=N+S+E+W)
 
         scrollbar = Scrollbar(self.listboxFrame)
         self.l1 = Listbox(self.listboxFrame, width=listbox_width,yscrollcommand=scrollbar.set, exportselection=0, height=16)
@@ -138,8 +138,10 @@ class AdminPage:
         healthLabel2.grid(row=3, column=1)
         self.b10 = Button(self.editlistboxFrame,text="Update", command=self.updateEntry , width=20)
         self.b10.grid(row=6,column=0, sticky=W)
-        b11 = Button(self.editlistboxFrame,text="Delete", command=self.deleteEntry , width=20)
-        b11.grid(row=7,column=0, sticky=W)
+        # b11 = Button(self.editlistboxFrame,text="Delete", command=self.deleteEntry , width=20)
+        # b11.grid(row=7,column=0, sticky=W)
+        b7 = Button(self.editlistboxFrame,text="Disable All Alarm", command=guipart.disableAllAlarm , width=20)
+        b7.grid(row=7,column=0, sticky=W)
         b12 = Button(self.editlistboxFrame,text="Map", command=guipart.openMap , width=20)
         b12.grid(row=8,column=0, sticky=W)
         b13 = Button(self.editlistboxFrame,text="View Logs", command=guipart.openLog , width=20)

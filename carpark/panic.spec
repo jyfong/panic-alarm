@@ -1,5 +1,5 @@
 # -*- mode: python -*-
-a = Analysis(['.\\panic.py', '.\\panic.py'],
+a = Analysis(['.\\panic.py'],
              pathex=['C:\\code\\ftdi-python\\panic-alarm\\carpark'],
              hiddenimports=[],
              hookspath=None,

@@ -116,15 +116,16 @@ class ThreadedClient:
         except:
             self.queue.put("error")
             print 'Closed', sys.exc_info()
+            self.d.close()
             
 
     def endApplication(self):
         self.running = 0
-        try:
-            # self.d.close()
-            pass
-        except:
-            print "Can't shutdown application."
+        # try:
+        self.d.close()
+            # pass
+        # except:
+        #     print "Can't shutdown application."
 
     def send(self, cmd):
         print "Sending : Bytes sent-", self.d.write(cmd),"Command -", cmd
