@@ -9,6 +9,7 @@ from datetime import date
 import os
 import sys
 import time
+import re
 
 db = dataset.connect('sqlite:///mydatabase.db')
 
@@ -130,12 +131,13 @@ class AdminPage:
         healthLabel = Label(self.editlistboxFrame, text="Health Signal Prompt Time")
         healthLabel.grid(row=2, column=0)
         self.healthTime = StringVar()
+        self.healthTime.trace('w', self.validate)
         healthSignal = Entry(self.editlistboxFrame, textvariable=self.healthTime)
         healthSignal.grid(row=3,column=0)
         healthLabel2 = Label(self.editlistboxFrame, text="(Ex: 00:00-23:00)")
         healthLabel2.grid(row=3, column=1)
-        b10 = Button(self.editlistboxFrame,text="Update", command=self.updateEntry , width=20)
-        b10.grid(row=6,column=0, sticky=W)
+        self.b10 = Button(self.editlistboxFrame,text="Update", command=self.updateEntry , width=20)
+        self.b10.grid(row=6,column=0, sticky=W)
         b11 = Button(self.editlistboxFrame,text="Delete", command=self.deleteEntry , width=20)
         b11.grid(row=7,column=0, sticky=W)
         b12 = Button(self.editlistboxFrame,text="Map", command=guipart.openMap , width=20)
@@ -156,6 +158,10 @@ class AdminPage:
 
         healthData = self.tableConfig.find_one(type="signal")
         self.healthTime.set(healthData['healthSignalCheckTime'])
+
+    def validate(self, name, index, mode): # or just self, *dummy
+        self.b10.config(state=(NORMAL if re.match('([0-1][0-9]|2[0-3]):[0-5][0-9]',self.healthTime.get()) else DISABLED))
+        return True
 
     def changeAdminPassword(self):
         oldpass = str(self.entry_4.get())
