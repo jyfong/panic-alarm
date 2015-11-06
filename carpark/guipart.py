@@ -218,9 +218,9 @@ class GuiPart:
                         self.l1.insert(END, repeater)
                         self.table.insert(dict(repeater=repeater))
 
-            # elif not (self.centralId == repeater or self.table.find_one(repeater=repeater) or '00000000' == repeater):
-            #     print "Alien Discovered", repeater
-            #     return
+            elif not (self.table.find_one(repeater=repeater) or '00000000' == repeater):
+                print "Alien Discovered", repeater
+                return
 
             elif cmd == 'A':
                 msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
