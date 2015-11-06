@@ -51,6 +51,7 @@ class GuiPart:
 
         self.centralId = "00000001"
         self.do_blink = False
+        self.isSos = False
         self.isOpenPanicDialog = False
         self.panicdlg = None
         self.lastpanic = None
@@ -60,8 +61,6 @@ class GuiPart:
         schedule.every().day.at(healthData['healthSignalCheckTime']).do(self.job)
         # schedule.every(1).minutes.do(self.job)
 
-        mixer.init()
-        mixer.music.load('siren.mp3')
 
         # Add default admin user and password
         if self.tableUsers.count() == 0:
@@ -115,10 +114,16 @@ class GuiPart:
         self.mlb.pack(expand=YES,fill=BOTH)
 
 
-
         row = self.tableConfig.find_one(type='map')
         if row:
             self.resizeImage(self.guardcanvas, row['map_width'], row['map_height'])
+
+        try:
+            mixer.init()
+            mixer.music.load('siren.mp3')
+        except:
+            if tkMessageBox.showerror("No audio driver found!", "Please install audio driver and restart the program."):
+                pass
 
         self.updateMLB()
         self.updateGuardMap()
@@ -299,8 +304,11 @@ class GuiPart:
         
 
     def stop_blinking(self):
-        mixer.music.stop()
         self.do_blink = False
+        try:
+            mixer.music.stop()
+        except:
+            print "No music init"
 
     # admin page
     def addUsers(self,master):
@@ -337,14 +345,18 @@ class GuiPart:
                 self.mlb.selection_set(i)
                 self.selectedlistbox()
 
-    def sos(self,warning=False): 
+    def sos(self,warning=False):
+        self.isSos = True
         while self.do_blink or warning:
-        #     for i in range(0, 3): winsound.Beep(2500, 100) 
-        #     for i in range(0, 3): winsound.Beep(2500, 100) 
-        #     for i in range(0, 3): winsound.Beep(2500, 100)
-            
-            mixer.music.play()
+            # for i in range(0, 3): winsound.Beep(2500, 100) 
+            # for i in range(0, 3): winsound.Beep(2500, 100) 
+            # for i in range(0, 3): winsound.Beep(2500, 100)
+            try:
+                mixer.music.play()
+            except:
+                print "No music init cant play."
             time.sleep(3)
+        self.isSos = False
 
     def panicAlarm(self, cmd, repeater):
         currentTime = time.time()
@@ -357,7 +369,13 @@ class GuiPart:
         # print 'checkpanic'
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
         # self.doBlinkThread = dict()
-        
+        try:
+            if not self.isSos:
+                self.sosThread = threading.Thread(target=self.sos)
+                self.sosThread.start()
+        except:
+            print "Fail to start thread.."
+
         for item in pendingPanic:
             house = self.findHouseByRepeater(item['repeater'])
             if house.isPanic == False:
@@ -366,11 +384,7 @@ class GuiPart:
                 self.blink(house.item)
                 # self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
                 # self.doBlinkThread[item['repeater']].start()
-        try:
-            self.sosThread = threading.Thread(target=self.sos)
-            self.sosThread.start()
-        except:
-            print "Fail to start thread.."
+
         self.openPanicDlg()
 
     def openPanicDlg(self):
@@ -380,11 +394,11 @@ class GuiPart:
                 self.panicdlg.loadPendingAlarm()
             else:
                 self.panicdlg = PanicDialog(self.master,self, False)
-        self.master.after(20000, lambda:self.openPanicDlg())   
+        self.master.after(120000, lambda:self.openPanicDlg())   
 
     def checkHealthSignal(self):
         schedule.run_pending()
-        self.master.after(20000, lambda:self.checkHealthSignal()) 
+        self.master.after(60000, lambda:self.checkHealthSignal()) 
 
     def on_exit(self):
         """When you click to exit, this function is called"""
@@ -405,14 +419,14 @@ class GuiPart:
             self.addDevicesWindow = Toplevel(self.master)
             # Menubar for addDevices window
             menubar = Menu(self.addDevicesWindow)
-            filemenu = Menu(menubar, tearoff=0)
-            filemenu.add_command(label="Clear DB", command=self.clearDatabase)
-            filemenu.add_separator()
-            menubar.add_cascade(label="File", menu=filemenu)
-            centralMenu = Menu(menubar, tearoff=0)
-            centralMenu.add_command(label="MCU Reset", command=self.mcuReset )
-            centralMenu.add_command(label="Check MCU ID", command=self.mcuIDChecking)
-            menubar.add_cascade(label="Central Menu" ,menu=centralMenu )
+            # filemenu = Menu(menubar, tearoff=0)
+            # filemenu.add_command(label="Clear DB", command=self.clearDatabase)
+            # filemenu.add_separator()
+            # menubar.add_cascade(label="File", menu=filemenu)
+            # centralMenu = Menu(menubar, tearoff=0)
+            # centralMenu.add_command(label="MCU Reset", command=self.mcuReset )
+            # centralMenu.add_command(label="Check MCU ID", command=self.mcuIDChecking)
+            # menubar.add_cascade(label="Central Menu" ,menu=centralMenu )
 
             self.addDevicesWindow.config(menu=menubar)
 
