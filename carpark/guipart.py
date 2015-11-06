@@ -57,8 +57,8 @@ class GuiPart:
         self.lastpanictime = None
 
         healthData = self.tableConfig.find_one(type="signal")
-        # schedule.every().day.at(healthData['healthSignalCheckTime']).do(self.job)
-        schedule.every(1).minutes.do(self.job)
+        schedule.every().day.at(healthData['healthSignalCheckTime']).do(self.job)
+        # schedule.every(1).minutes.do(self.job)
 
         mixer.init()
         mixer.music.load('siren.mp3')
@@ -131,7 +131,7 @@ class GuiPart:
         repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 1*60*60')
 
         if repeaters:
-            healthSignalFail = healthSignalFailDialog(self.master,self)
+            healthSignalFail = healthSignalFailDialog(self.master,self, False)
 
         
     def updateMLB(self):
@@ -306,12 +306,15 @@ class GuiPart:
 
 
     def logger(self, msg):
+        print 'logger', msg
         now = time.localtime()
         msg = time.strftime("%y/%m/%d %H:%M", now) + " " +  msg
         timeinsec = time.time()
         if 'log' in dir(self):
             self.log.insert(END, msg)
+        # print 'logger2', timeinsec, msg, self
         self.tableLog.insert(dict(time=timeinsec,msg=msg))
+        # print 'logger3'
 
 
    

@@ -186,9 +186,9 @@ class healthSignalFailDialog(customtkSimpleDialog.Dialog):
         pass
 
     def loadFailedHealthSignal(self):
-        print 'loadFailedHealthSignal'
         currentTime = time.time()
-        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 1*60*60')
+        print 'loadFailedHealthSignal', currentTime
+        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 24*60*60')
 
         for item in repeaters:
             lastHealthSignal = time.strftime("%y/%m/%d %H:%M", time.localtime(item['lastHealthSignal']))
@@ -197,7 +197,8 @@ class healthSignalFailDialog(customtkSimpleDialog.Dialog):
     def apply(self):
         login = LoginDialog(self.master)
         if login.result == 1:
-            self.guipart.logger('test')
+            self.guipart.logger("Health fail acknowledged by " +login.user+ "\n")
+
 
     def closed(self):
         pass
