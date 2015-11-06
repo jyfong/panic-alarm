@@ -163,6 +163,10 @@ class GuiPart:
         self.table.create_column('phone', sqlalchemy.String)
         self.table.create_column('lastHealthSignal', sqlalchemy.Integer)
         self.initPictureTable()
+        healthsignal = self.tableConfig.find_one(type="signal")
+        if not healthsignal:
+            self.tableConfig.insert(dict(type="signal",healthSignalCheckTime="10:00"))
+
 
     def initPictureTable(self):
         conn = sqlite3.connect(self.db_file)
