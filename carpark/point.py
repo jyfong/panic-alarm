@@ -49,10 +49,11 @@ class Point:
         # record the item and its location
 
         if self.movable:
-            self._drag_data["item"] = self.canvas.find_closest(event.x, event.y)[0]
-            self._drag_data["x"] = event.x
-            self._drag_data["y"] = event.y
-        self.onPointSelect(self.repeater)
+            # self._drag_data["item"] = self.canvas.find_closest(event.x, event.y)[0]
+            self._drag_data["item"] = self.item
+            self._drag_data["x"] = self.canvas.canvasx(event.x)
+            self._drag_data["y"] = self.canvas.canvasy(event.y)
+        # self.onPointSelect(self.repeater)
 
 
     def OnTokenButtonRelease(self, event):
@@ -63,25 +64,29 @@ class Point:
             self._drag_data["x"] = 0
             self._drag_data["y"] = 0
 
-            data = dict(repeater=self.repeater, coordx=event.x, coordy=event.y)
+            data = dict(repeater=self.repeater, coordx=self.canvas.canvasx(event.x), coordy=self.canvas.canvasy(event.y))
             self.table.update(data, ['repeater'])
 
 
     def OnTokenMotion(self, event):
+
         '''Handle dragging of an object'''
         # compute how much this object has moved
+
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
         if self.movable:
-            # print self.canvas.gettags(self._drag_data["item"])[0]
+            # print self.canvas.gettags(self._drag_data["item"]), self._drag_data["item"]
             if self.canvas.gettags(self._drag_data["item"])[0] == 'map':
                 return
-            delta_x = event.x - self._drag_data["x"]
-            delta_y = event.y - self._drag_data["y"]
+            delta_x = x - self._drag_data["x"]
+            delta_y = y - self._drag_data["y"]
             # move the object the appropriate amount
             self.canvas.move(self._drag_data["item"], delta_x, delta_y)
             self.canvas.move(self.text, delta_x, delta_y)
             # record the new position
-            self._drag_data["x"] = event.x
-            self._drag_data["y"] = event.y
+            self._drag_data["x"] = x
+            self._drag_data["y"] = y
 
 
 

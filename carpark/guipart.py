@@ -728,7 +728,7 @@ class GuiPart:
         # Put the image into a canvas compatible class, and stick in an
         # arbitrary variable to the garbage collector doesn't destroy it
         canvas.image = ImageTk.PhotoImage(self.image)
-        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
+        canvas.create_image(0, 0, image=canvas.image, anchor='nw', tags='map')
 
     def uploadImage(self):
         self.tablePicture.drop()
@@ -839,7 +839,7 @@ class GuiPart:
         self.image = self.img_copy.resize((new_width, new_height))
 
         canvas.image = ImageTk.PhotoImage(self.image)
-        canvas.create_image(0, 0, image=canvas.image, anchor='nw')
+        canvas.create_image(0, 0, image=canvas.image, anchor='nw', tags='map')
         self.tableConfig.upsert(dict(type='map', map_width=new_width, map_height=new_height), ['type'])
 
 
