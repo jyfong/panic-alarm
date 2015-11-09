@@ -11,3 +11,11 @@ autorestart
 log usb not connected 
 
 friday saturday pull cable
+
+
+
+
+
+
+clean panic log history
+health signal restart
