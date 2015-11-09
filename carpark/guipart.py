@@ -225,7 +225,7 @@ class GuiPart:
                     self.logger(msg)
                     if not self.table.find_one(repeater=repeater):
                         self.l1.insert(END, repeater)
-                        self.table.insert(dict(repeater=repeater))
+                        self.table.insert(dict(repeater=repeater, coordx=100, coordy=100))
 
             elif not (self.table.find_one(repeater=repeater) or '00000000' == repeater):
                 print "Alien Discovered", repeater
@@ -359,14 +359,16 @@ class GuiPart:
         self.isSos = False
 
     def panicAlarm(self, cmd, repeater):
-        currentTime = time.time()
-        self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
-        print currentTime, repeater
-        self.checkPanic()
+        if self.listen == False:
+            currentTime = time.time()
+            self.tablePanic.insert(dict(repeater=repeater, time=currentTime,acknowledged="None"))
+            print currentTime, repeater
+            self.checkPanic()
         
 
     def checkPanic(self):
         # print 'checkpanic'
+
         pendingPanic = db.query('SELECT panic.time, panic.repeater, repeater.name FROM panic, repeater WHERE panic.repeater = repeater.repeater AND panic.acknowledged=="None"')
         # self.doBlinkThread = dict()
         try:
@@ -377,13 +379,16 @@ class GuiPart:
             print "Fail to start thread.."
 
         for item in pendingPanic:
+            if not self.table.find_one(repeater=item['repeater']):
+                continue
             house = self.findHouseByRepeater(item['repeater'])
-            if house.isPanic == False:
-                house.isPanic = True
-                self.start_blinking()
-                self.blink(house.item)
-                # self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
-                # self.doBlinkThread[item['repeater']].start()
+            if house != -1:
+                if house.isPanic == False:
+                    house.isPanic = True
+                    self.start_blinking()
+                    self.blink(house.item)
+                    # self.doBlinkThread[item['repeater']] = threading.Thread(target=lambda:self.blink(house.item))
+                    # self.doBlinkThread[item['repeater']].start()
 
         self.openPanicDlg()
 
@@ -415,7 +420,7 @@ class GuiPart:
     def openInstaller(self):
         
         result =  tkSimpleDialog.askstring("Database Operation", "Please enter password :", show='*')
-        if result == "dfelectronic123":
+        if result == "dfelectronic":
             self.addDevicesWindow = Toplevel(self.master)
             # Menubar for addDevices window
             menubar = Menu(self.addDevicesWindow)
@@ -592,7 +597,7 @@ class GuiPart:
 
     def updateEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())
-        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(), coordx=100, coordy=100), ['repeater'] )
+        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get()), ['repeater'] )
 
     def deleteEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())
@@ -710,7 +715,9 @@ class GuiPart:
             print "No map found!"
 
         for item in self.table:
-            if item['coordx'] != None and item['coordy'] != None:
+            if 'coordx' not in item:
+                print 'Please update' + item['repeater'] + 'info.'
+            elif item['coordx'] != None and item['coordy'] != None:
                 Point(self.table, self.admincanvas, (item['coordx'], item['coordy']), item['repeater'],item['name'])
 
     def closeInstallerMap(self):

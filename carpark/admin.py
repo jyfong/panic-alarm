@@ -15,6 +15,7 @@ db = dataset.connect('sqlite:///mydatabase.db')
 
 class AdminPage:
     def __init__(self, master, guipart):
+        self.guipart = guipart
         self.tableUsers = db['users']
         self.table = db['repeater']
         self.tableConfig = db['config']
@@ -23,7 +24,7 @@ class AdminPage:
         listbox_width = 40
         self.adminWindow = Toplevel(self.master)
         self.adminWindow.geometry("+%d+%d" % ( master.winfo_rootx()+50, master.winfo_rooty()))
-
+        self.adminWindow.protocol('WM_DELETE_WINDOW', self.closeAdminWindow)
         # create a toplevel menu
         menubar = Menu(self.adminWindow)
 
@@ -154,12 +155,17 @@ class AdminPage:
         
 
         for repeater in self.table:
-            self.l1.insert(END, repeater['repeater']+'/'+ repeater['name'])
+            self.l1.insert(END, repeater['repeater']+'/'+ str(repeater['name']))
         self.l1.select_set(0)
         self.loadEntry('init')
 
         healthData = self.tableConfig.find_one(type="signal")
         self.healthTime.set(healthData['healthSignalCheckTime'])
+
+    def closeAdminWindow(self):
+        self.guipart.updateGuardMap()
+        self.guipart.updateMLB()
+        self.adminWindow.destroy()
 
     def validate(self, name, index, mode): # or just self, *dummy
         self.b10.config(state=(NORMAL if re.match('([0-1][0-9]|2[0-3]):[0-5][0-9]',self.healthTime.get()) else DISABLED))
@@ -210,7 +216,7 @@ class AdminPage:
 
     def updateEntry(self):
         repeaterID = self.l1.get(self.l1.curselection()).partition('/')[0]
-        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get(), coordx=100, coordy=100), ['repeater'] )
+        self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get()), ['repeater'] )
         self.tableConfig.upsert(dict(type="signal",healthSignalCheckTime=self.healthTime.get()),['type'])
 
     def deleteEntry(self):
