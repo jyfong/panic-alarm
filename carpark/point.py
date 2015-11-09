@@ -53,7 +53,10 @@ class Point:
             self._drag_data["item"] = self.item
             self._drag_data["x"] = self.canvas.canvasx(event.x)
             self._drag_data["y"] = self.canvas.canvasy(event.y)
-        # self.onPointSelect(self.repeater)
+        try:
+            self.onPointSelect(self.repeater)
+        except:
+            print 'onPointSelect'
 
 
     def OnTokenButtonRelease(self, event):
