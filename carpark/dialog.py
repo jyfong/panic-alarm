@@ -182,13 +182,12 @@ class healthSignalFailDialog(customtkSimpleDialog.Dialog):
         self.loadFailedHealthSignal()
 
     def canceled(self):
-        print 'press cancel'
-        pass
+        self.guipart.logger("Health fail acknowledgement canceled by user. Prompt next day again. \n")
 
     def loadFailedHealthSignal(self):
         currentTime = time.time()
         print 'loadFailedHealthSignal', currentTime
-        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 24*60*60')
+        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 24*60*60 OR lastHealthSignal IS NULL')
 
         for item in repeaters:
             lastHealthSignal = time.strftime("%y/%m/%d %H:%M", time.localtime(item['lastHealthSignal']))

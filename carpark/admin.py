@@ -19,6 +19,7 @@ class AdminPage:
         self.tableUsers = db['users']
         self.table = db['repeater']
         self.tableConfig = db['config']
+        self.needRestart = False
     	# GUI INITIALIZATION
         self.master = master
         listbox_width = 40
@@ -163,9 +164,15 @@ class AdminPage:
         self.healthTime.set(healthData['healthSignalCheckTime'])
 
     def closeAdminWindow(self):
-        self.guipart.updateGuardMap()
-        self.guipart.updateMLB()
-        self.adminWindow.destroy()
+        if self.needRestart:
+            self.guipart.logger("Shutdown and restart after configuring.\n")
+            if tkMessageBox.showinfo("Restart Required", "Restarting Application after Configuration!"):
+                python = sys.executable
+                os.execl(python, python, * sys.argv)
+        else:
+            self.guipart.updateGuardMap()
+            self.guipart.updateMLB()
+            self.adminWindow.destroy()
 
     def validate(self, name, index, mode): # or just self, *dummy
         self.b10.config(state=(NORMAL if re.match('([0-1][0-9]|2[0-3]):[0-5][0-9]',self.healthTime.get()) else DISABLED))
@@ -218,6 +225,11 @@ class AdminPage:
         repeaterID = self.l1.get(self.l1.curselection()).partition('/')[0]
         self.table.upsert(dict(repeater=repeaterID,name=self.nameVar.get()), ['repeater'] )
         self.tableConfig.upsert(dict(type="signal",healthSignalCheckTime=self.healthTime.get()),['type'])
+        self.needRestart = True
+        self.l1.delete(0,END)
+
+        for repeater in self.table:
+            self.l1.insert(END, repeater['repeater']+'/'+ str(repeater['name']))
 
     def deleteEntry(self):
         repeaterID = self.l1.get(self.l1.curselection())

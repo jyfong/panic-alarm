@@ -133,7 +133,7 @@ class GuiPart:
     def job(self):
         print 'job'
         currentTime = time.time()
-        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 1*60*60')
+        repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 24*60*60 OR lastHealthSignal IS NULL')
 
         if repeaters:
             healthSignalFail = healthSignalFailDialog(self.master,self, False)
