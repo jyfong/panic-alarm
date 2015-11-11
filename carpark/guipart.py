@@ -311,6 +311,7 @@ class GuiPart:
             print "No music init"
 
     def stopAlarmSiren(self):
+        self.warning = False
         try:
             mixer.music.stop()
         except:
@@ -352,8 +353,9 @@ class GuiPart:
                 self.selectedlistbox()
 
     def sos(self,warning=False):
+        self.warning = warning
         self.isSos = True
-        while self.do_blink or warning:
+        while self.do_blink or self.warning:
             # for i in range(0, 3): winsound.Beep(2500, 100) 
             # for i in range(0, 3): winsound.Beep(2500, 100) 
             # for i in range(0, 3): winsound.Beep(2500, 100)
