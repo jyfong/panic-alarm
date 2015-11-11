@@ -310,6 +310,12 @@ class GuiPart:
         except:
             print "No music init"
 
+    def stopAlarmSiren(self):
+        try:
+            mixer.music.stop()
+        except:
+            print "No music init"
+
     # admin page
     def addUsers(self,master):
         login = LoginDialog(master)

@@ -182,6 +182,7 @@ class healthSignalFailDialog(customtkSimpleDialog.Dialog):
         self.loadFailedHealthSignal()
 
     def canceled(self):
+        self.guipart.stopAlarmSiren()
         self.guipart.logger("Health fail acknowledgement canceled by user. Prompt next day again. \n")
 
     def loadFailedHealthSignal(self):
@@ -190,10 +191,20 @@ class healthSignalFailDialog(customtkSimpleDialog.Dialog):
         repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 24*60*60 OR lastHealthSignal IS NULL')
 
         for item in repeaters:
-            lastHealthSignal = time.strftime("%y/%m/%d %H:%M", time.localtime(item['lastHealthSignal']))
+            if item['lastHealthSignal']:
+                lastHealthSignal = time.strftime("%y/%m/%d %H:%M", time.localtime(item['lastHealthSignal']))
+            else:
+                lastHealthSignal = "None"
             self.mlb.insert(END,(item['repeater'],item['name'],lastHealthSignal))
 
+        try:
+            self.guipart.sosThread = threading.Thread(target=lambda:self.guipart.sos(True))
+            self.guipart.sosThread.start()
+        except:
+            print "Fail to start thread.."
+
     def apply(self):
+        self.guipart.stopAlarmSiren()
         login = LoginDialog(self.master)
         if login.result == 1:
             self.guipart.logger("Health fail acknowledged by " +login.user+ "\n")
