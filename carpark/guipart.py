@@ -59,7 +59,7 @@ class GuiPart:
 
         healthData = self.tableConfig.find_one(type="signal")
         schedule.every().day.at(healthData['healthSignalCheckTime']).do(self.job)
-        # schedule.every(1).minutes.do(self.job)
+        # schedule.every(3).minutes.do(self.job)
 
 
         # Add default admin user and password
@@ -135,9 +135,9 @@ class GuiPart:
         currentTime = time.time()
         repeaters = db.query('SELECT repeater,name,lastHealthSignal FROM repeater WHERE '+ str(currentTime) + '- lastHealthSignal > 24*60*60 OR lastHealthSignal IS NULL')
 
-        if repeaters:
+        for r in repeaters:
             healthSignalFail = healthSignalFailDialog(self.master,self, False)
-
+            break
         
     def updateMLB(self):
         self.mlb.delete(0,END)
