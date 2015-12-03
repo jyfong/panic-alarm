@@ -1,11 +1,11 @@
-('C:\\code\\ftdi-python\\panic-alarm\\carpark\\build\\panic\\out00-PKG.pkg',
+('C:\\code\\Panic-Alarm\\panic-alarm\\carpark\\build\\panic\\out00-PKG.pkg',
  {'BINARY': 1,
   'DATA': 1,
   'EXECUTABLE': 1,
   'EXTENSION': 1,
   'PYMODULE': 1,
   'PYSOURCE': 1},
- [('out00-PYZ.pyz', 'C:\\code\\ftdi-python\\panic-alarm\\carpark\\build\\panic\\out00-PYZ.pyz', 'PYZ'), ('struct', 'C:\\Python26\\lib\\struct.pyc', 'PYMODULE'), ('pyi_os_path', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\pyi_os_path.pyc', 'PYMODULE'), ('pyi_archive', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\pyi_archive.pyc', 'PYMODULE'), ('pyi_importers', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\pyi_importers.pyc', 'PYMODULE'), ('_pyi_bootstrap', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\_pyi_bootstrap.py', 'PYSOURCE'), ('pyi_carchive', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\pyi_carchive.py', 'PYSOURCE'), ('pyi_rth_PIL_Image', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\rthooks\\pyi_rth_PIL_Image.py', 'PYSOURCE'), ('pyi_rth_pkgres', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\rthooks\\pyi_rth_pkgres.py', 'PYSOURCE'), ('pyi_rth_Tkinter', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\rthooks\\pyi_rth_Tkinter.py', 'PYSOURCE'), ('panic', '.\\panic.py', 'PYSOURCE'), ('panic.exe.manifest', 'C:\\code\\ftdi-python\\panic-alarm\\carpark\\build\\panic\\panic.exe.manifest', 'BINARY')],
+ [('out00-PYZ.pyz', 'C:\\code\\Panic-Alarm\\panic-alarm\\carpark\\build\\panic\\out00-PYZ.pyz', 'PYZ'), ('struct', 'C:\\Python26\\lib\\struct.pyc', 'PYMODULE'), ('pyi_os_path', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\pyi_os_path.pyc', 'PYMODULE'), ('pyi_archive', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\pyi_archive.pyc', 'PYMODULE'), ('pyi_importers', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\pyi_importers.pyc', 'PYMODULE'), ('_pyi_bootstrap', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\_pyi_bootstrap.py', 'PYSOURCE'), ('pyi_carchive', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\pyi_carchive.py', 'PYSOURCE'), ('pyi_rth_PIL_Image', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\rthooks\\pyi_rth_PIL_Image.py', 'PYSOURCE'), ('pyi_rth_pkgres', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\rthooks\\pyi_rth_pkgres.py', 'PYSOURCE'), ('pyi_rth_Tkinter', 'C:\\Python26\\lib\\site-packages\\PyInstaller\\loader\\rthooks\\pyi_rth_Tkinter.py', 'PYSOURCE'), ('panic', 'panic.py', 'PYSOURCE'), ('panic.exe.manifest', 'C:\\code\\Panic-Alarm\\panic-alarm\\carpark\\build\\panic\\panic.exe.manifest', 'BINARY')],
  True,
  None,
  False)

@@ -215,8 +215,25 @@ class GuiPart:
 
             cmd = m.group(1)
             repeater = m.group(2)
-            RSSI = m.group(3)
+            try:
+                RSSI = int(m.group(3), 16)
+            except:
+                RSSI = 999
 
+            signalStrength = ""
+
+            if RSSI < 70:
+                signalStrength = "Excellent"
+            elif RSSI <85:
+                signalStrength = "Good"
+            elif RSSI <100:
+                signalStrength = "Fair"
+            elif RSSI <110:
+                signalStrength = "Poor"
+            elif RSSI <150:
+                signalStrength = "No Signal"    
+
+            RSSI = str(RSSI)
 
             if cmd == "I":
                 if self.listen == True:
@@ -232,13 +249,13 @@ class GuiPart:
                 return
 
             elif cmd == 'A':
-                msg = "Repeater with ID = "+ repeater + " has acknowledged..\n"
+                msg = "Repeater ID= "+ repeater + " acknowledged. Signal: "+ signalStrength +" RSSI: -"+ RSSI +"\n"
                 self.logger(msg)
             elif cmd == "E":
-                msg = "Repeater with ID = " + repeater + " has responded..\n"
+                msg = "Repeater ID= " + repeater + " responded. Signal: "+ signalStrength +" RSSI: -"+ RSSI +"\n"
                 self.logger(msg)
             elif cmd == "C":
-                msg = "Repeater with ID = " + repeater + " has finished searching path..\n"
+                msg = "Repeater ID = " + repeater + " has finished searching path..\n"
                 self.logger(msg)
                 
                 if 'searchedPath' in dir(self):
@@ -264,7 +281,7 @@ class GuiPart:
                 else:
                     self.lastpanic = repeater
                     self.lastpanictime = time.time()
-                    msg = "Repeater central ID = " + repeater + " PANIC ALARM! \n"
+                    msg = "Repeater central ID=" + repeater + " PANIC ALARM! .. Signal: "+ signalStrength +" RSSI: -"+ RSSI +"\n"
                     self.logger(msg)
                     # house.isPanic = True
                     self.panicAlarm(cmd, repeater)
@@ -272,7 +289,7 @@ class GuiPart:
                 msg = "Current Central ID= " + repeater + "..\n"
                 self.logger(msg)
             elif cmd == "R":
-                msg = "Health signal from " + repeater + " received..\n"
+                msg = "Health signal from " + repeater + " received..Signal: "+ signalStrength +" RSSI: -"+ RSSI +"\n"
                 self.logger(msg)
                 self.table.upsert(dict(repeater=repeater,lastHealthSignal=time.time()),['repeater'])
 
@@ -331,6 +348,7 @@ class GuiPart:
         timeinsec = time.time()
         if 'log' in dir(self):
             self.log.insert(END, msg)
+            self.log.yview(END)
         # print 'logger2', timeinsec, msg, self
         self.tableLog.insert(dict(time=timeinsec,msg=msg))
         # print 'logger3'
